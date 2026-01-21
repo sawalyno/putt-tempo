@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(findstr:*)",
+      "Bash(find:*)",
+      "Bash(npx expo install:*)",
+      "WebSearch",
+      "Bash(curl:*)",
+      "WebFetch(domain:docs.expo.dev)"
+    ]
+  }
+}
