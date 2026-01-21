@@ -1,10 +1,9 @@
 // app/(tabs)/presets.tsx - プリセット一覧画面（mockデザイン準拠）
 
 import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 
 import { useAllPresets, useCustomPresets, usePresetLimit } from '@/hooks/usePresets';
 import { useDeletePreset } from '@/hooks/usePresetMutations';
@@ -21,6 +20,7 @@ const PRESET_ICONS: { [key: string]: keyof typeof Ionicons.glyphMap } = {
 };
 
 export default function PresetsScreen() {
+  const insets = useSafeAreaInsets();
   const { isPremium } = usePremiumStatus();
   const { data: customPresets = [] } = useCustomPresets();
   const { canCreate, current, limit } = usePresetLimit();
@@ -63,11 +63,9 @@ export default function PresetsScreen() {
   return (
     <View style={styles.container}>
       {/* ヘッダー */}
-      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
-        <BlurView intensity={80} style={styles.header}>
-          <Text style={styles.headerTitle}>プリセット</Text>
-        </BlurView>
-      </SafeAreaView>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>プリセット</Text>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -204,25 +202,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050505',
   },
-  headerSafeArea: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-  },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: 24,
-    fontFamily: 'Manrope_700Bold',
+    fontSize: 20,
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#ffffff',
     letterSpacing: -0.5,
   },
@@ -230,7 +216,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
     paddingHorizontal: 16,
     paddingBottom: 120,
   },

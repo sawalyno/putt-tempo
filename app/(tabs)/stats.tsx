@@ -1,11 +1,9 @@
 // app/(tabs)/stats.tsx - 統計画面（mockデザイン準拠）
 
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { usePracticeStats } from '@/hooks/usePracticeStats';
 import { usePremiumStatus } from '@/hooks/usePurchase';
@@ -15,6 +13,7 @@ const DAY_NAMES = ['月', '火', '水', '木', '金', '土', '日'];
 const DAY_COLORS = ['#fff', '#fff', '#fff', '#fff', '#fff', '#2a73ea', '#ef4444'];
 
 export default function StatsScreen() {
+  const insets = useSafeAreaInsets();
   const { isPremium } = usePremiumStatus();
   const { data: stats } = usePracticeStats();
 
@@ -46,22 +45,9 @@ export default function StatsScreen() {
   return (
     <View style={styles.container}>
       {/* ヘッダー */}
-      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
-        <BlurView intensity={80} style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="analytics" size={24} color="#2a73ea" />
-            <Text style={styles.headerTitle}>統計</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable style={styles.headerButton}>
-              <Ionicons name="calendar" size={22} color="#ffffff" />
-            </Pressable>
-            <Pressable style={styles.headerButton}>
-              <Ionicons name="share-outline" size={22} color="#ffffff" />
-            </Pressable>
-          </View>
-        </BlurView>
-      </SafeAreaView>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>統計</Text>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -195,26 +181,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050505',
   },
-  headerSafeArea: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-  },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 20,
@@ -222,23 +191,10 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     letterSpacing: -0.5,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
     paddingHorizontal: 16,
     paddingBottom: 120,
   },

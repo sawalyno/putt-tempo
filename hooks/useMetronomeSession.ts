@@ -17,7 +17,7 @@ export function useMetronomeSession(
     backRatio: settings.backRatio,
     forwardRatio: settings.forwardRatio,
     soundType: settings.soundType,
-    outputMode: settings.isVibrationEnabled ? 'both' : 'sound',
+    outputMode: settings.outputMode,
     onTick: () => {
       // 振り子アニメーション用のコールバックをここで呼べる
     },

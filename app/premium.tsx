@@ -25,11 +25,11 @@ const FEATURES = [
 ];
 
 export default function PremiumScreen() {
-  const { purchasePremium, restorePurchases, isLoading } = usePurchase();
+  const { purchase, restore, isLoading } = usePurchase();
 
   const handlePurchase = async () => {
     try {
-      await purchasePremium();
+      await purchase();
       Alert.alert('成功', 'プレミアムへのアップグレードが完了しました！', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -43,7 +43,7 @@ export default function PremiumScreen() {
 
   const handleRestore = async () => {
     try {
-      await restorePurchases();
+      await restore();
       Alert.alert('完了', '購入の復元が完了しました', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -277,15 +277,16 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   purchaseButton: {
-    height: 64,
-    borderRadius: 12,
-    backgroundColor: '#2a73ea',
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#F59E0B',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#2a73ea',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 10,
   },
   purchaseButtonPressed: {
     transform: [{ scale: 0.98 }],

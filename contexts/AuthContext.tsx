@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ユーザーデータの初期化（RPC呼び出し）
   const initializeUserData = useCallback(async () => {
     try {
-      const { data, error } = await supabase.rpc('initialize_user_data');
+      const { data, error } = await supabase.rpc('initialize_user');
 
       if (error) {
         console.error('ユーザーデータ初期化エラー:', error);

@@ -105,7 +105,7 @@ export interface MetronomeSettings {
   backRatio: number;
   forwardRatio: number;
   soundType: SoundType;
-  isVibrationEnabled: boolean;
+  outputMode: OutputMode;
 }
 
 /** 出力モード */

@@ -1,16 +1,15 @@
-// components/Pendulum.tsx - 振り子アニメーション（mockデザイン準拠）
+// components/Pendulum.tsx - 振り子アニメーション（バック/フォワードを視覚的に明示）
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withRepeat,
   withSequence,
   Easing,
   cancelAnimation,
-  withSpring,
+  runOnJS,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -23,8 +22,8 @@ interface PendulumProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PENDULUM_HEIGHT = 160;
-const MAX_ANGLE = 15; // degrees - 少し控えめに
+const PENDULUM_HEIGHT = 140;
+const MAX_ANGLE = 18; // degrees
 
 export function Pendulum({
   isPlaying,
@@ -34,55 +33,98 @@ export function Pendulum({
   forwardRatio,
 }: PendulumProps) {
   const rotation = useSharedValue(0);
+  const bobGlow = useSharedValue(0);
+  const impactFlash = useSharedValue(0);
 
+  // currentPhaseに基づいてアニメーション
   useEffect(() => {
-    if (isPlaying && bpm > 0) {
-      // 1サイクルの時間（ミリ秒）
-      const cycleDuration = 60000 / bpm;
-      const totalRatio = backRatio + forwardRatio;
-      const backMs = (backRatio / totalRatio) * cycleDuration;
-      const forwardMs = (forwardRatio / totalRatio) * cycleDuration;
-
-      // シンプルな振り子アニメーション
-      // back: 0 → MAX_ANGLE (backMs)
-      // forward: MAX_ANGLE → -MAX_ANGLE → 0 (forwardMs)
-      rotation.value = withRepeat(
-        withSequence(
-          // バックスイング: 右へ
-          withTiming(MAX_ANGLE, {
-            duration: backMs,
-            easing: Easing.out(Easing.quad),
-          }),
-          // フォワードスイング: 左へ振り抜く
-          withTiming(-MAX_ANGLE * 0.3, {
-            duration: forwardMs * 0.7,
-            easing: Easing.in(Easing.quad),
-          }),
-          // 戻り
-          withTiming(0, {
-            duration: forwardMs * 0.3,
-            easing: Easing.out(Easing.quad),
-          })
-        ),
-        -1,
-        false
-      );
-    } else {
+    if (!isPlaying) {
       cancelAnimation(rotation);
-      rotation.value = withTiming(0, { 
-        duration: 200,
+      rotation.value = withTiming(0, { duration: 200 });
+      bobGlow.value = withTiming(0, { duration: 200 });
+      impactFlash.value = 0;
+      return;
+    }
+
+    const cycleDuration = 60000 / bpm;
+    const totalRatio = backRatio + forwardRatio;
+    const backMs = (backRatio / totalRatio) * cycleDuration;
+    const forwardMs = (forwardRatio / totalRatio) * cycleDuration;
+
+    if (currentPhase === 'back') {
+      // バックスイング: 中央から右へ
+      rotation.value = withTiming(MAX_ANGLE, {
+        duration: backMs,
         easing: Easing.out(Easing.quad),
       });
+      bobGlow.value = withTiming(0.3, { duration: 100 });
+      impactFlash.value = 0;
+    } else if (currentPhase === 'forward') {
+      // フォワード: 右から左へ（インパクト）
+      rotation.value = withSequence(
+        withTiming(-MAX_ANGLE * 0.5, {
+          duration: forwardMs * 0.6,
+          easing: Easing.in(Easing.quad),
+        }),
+        withTiming(0, {
+          duration: forwardMs * 0.4,
+          easing: Easing.out(Easing.quad),
+        })
+      );
+      // インパクトフラッシュ
+      bobGlow.value = withSequence(
+        withTiming(1, { duration: 50 }),
+        withTiming(0.3, { duration: 150 })
+      );
+      impactFlash.value = withSequence(
+        withTiming(1, { duration: 30 }),
+        withTiming(0, { duration: 200 })
+      );
     }
-  }, [isPlaying, bpm, backRatio, forwardRatio]);
+  }, [isPlaying, currentPhase, bpm, backRatio, forwardRatio]);
 
   const pendulumAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
+  const bobAnimatedStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.4 + bobGlow.value * 0.6,
+    shadowRadius: 20 + bobGlow.value * 30,
+  }));
+
+  const impactFlashStyle = useAnimatedStyle(() => ({
+    opacity: impactFlash.value,
+  }));
+
   return (
     <View style={styles.container}>
-      {/* ピボットポイント（上部の白い丸） */}
+      {/* インパクトフラッシュ */}
+      <Animated.View style={[styles.impactFlash, impactFlashStyle]} />
+
+      {/* フェーズインジケーター */}
+      <View style={styles.phaseIndicator}>
+        <View style={[
+          styles.phaseItem,
+          currentPhase === 'back' && isPlaying && styles.phaseItemActive,
+        ]}>
+          <Text style={[
+            styles.phaseText,
+            currentPhase === 'back' && isPlaying && styles.phaseTextActive,
+          ]}>BACK</Text>
+        </View>
+        <View style={styles.phaseDivider} />
+        <View style={[
+          styles.phaseItem,
+          currentPhase === 'forward' && isPlaying && styles.phaseItemForward,
+        ]}>
+          <Text style={[
+            styles.phaseText,
+            currentPhase === 'forward' && isPlaying && styles.phaseTextForward,
+          ]}>IMPACT</Text>
+        </View>
+      </View>
+
+      {/* ピボットポイント */}
       <View style={styles.pivot} />
 
       {/* 振り子本体 */}
@@ -94,7 +136,9 @@ export function Pendulum({
         />
 
         {/* ボブ（先端の重り） */}
-        <View style={styles.bob} />
+        <Animated.View style={[styles.bob, bobAnimatedStyle]}>
+          <View style={styles.bobInner} />
+        </Animated.View>
       </Animated.View>
 
       {/* 弧（破線） */}
@@ -112,12 +156,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
+  impactFlash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(42, 115, 234, 0.1)',
+    borderRadius: 20,
+  },
+  phaseIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 8,
+  },
+  phaseItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  phaseItemActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  phaseItemForward: {
+    backgroundColor: 'rgba(42, 115, 234, 0.3)',
+  },
+  phaseDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  phaseText: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    color: 'rgba(255,255,255,0.3)',
+    letterSpacing: 2,
+  },
+  phaseTextActive: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  phaseTextForward: {
+    color: '#2a73ea',
+  },
   pivot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#ffffff',
-    marginTop: 16,
+    marginTop: 8,
     zIndex: 10,
   },
   pendulumContainer: {
@@ -143,6 +231,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bobInner: {
+    width: 8,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 2,
   },
   arcContainer: {
     position: 'absolute',

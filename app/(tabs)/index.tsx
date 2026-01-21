@@ -1,7 +1,7 @@
 // app/(tabs)/index.tsx - ホーム画面（mockデザイン準拠）
 
-import { useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,8 +15,6 @@ import { useSavePracticeSession } from '@/hooks/usePracticeStats';
 import { OutputMode, Preset } from '@/types';
 import { DEFAULT_PRESETS } from '@/constants';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { isPremium } = usePremiumStatus();
@@ -29,8 +27,9 @@ export default function HomeScreen() {
   );
   const selectedPreset = usePreset(selectedPresetId) || DEFAULT_PRESETS[0];
 
-  // 出力モード
-  const [outputMode, setOutputMode] = useState<OutputMode>('both');
+  // 出力モード（独立したトグル）
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [isVibrationEnabled, setIsVibrationEnabled] = useState(false);
 
   // プリセット選択モーダル
   const [isPresetModalVisible, setIsPresetModalVisible] = useState(false);
@@ -41,19 +40,30 @@ export default function HomeScreen() {
   const soundType =
     'sound_type' in selectedPreset ? selectedPreset.sound_type : 'click';
 
+  // outputModeを計算
+  const outputMode: OutputMode = useMemo(() => {
+    if (isSoundEnabled && isVibrationEnabled) return 'both';
+    if (isSoundEnabled) return 'sound';
+    if (isVibrationEnabled) return 'vibration';
+    // 両方OFFの場合は音だけ（最低限どちらかは必要）
+    return 'sound';
+  }, [isSoundEnabled, isVibrationEnabled]);
+
   // メトロノームセッション
   const { isPlaying, currentPhase, toggleSession } = useMetronomeSession(
     {
       bpm: selectedPreset.bpm,
       backRatio,
       forwardRatio,
-      soundType,
-      isVibrationEnabled: outputMode === 'vibration' || outputMode === 'both',
+      soundType: isSoundEnabled ? soundType : 'silent',
+      outputMode,
     },
     selectedPreset.isDefault ? null : selectedPreset.id,
     selectedPreset.name,
     async (session) => {
-      await saveSession(session);
+      if (session.durationSeconds >= 5) {
+        await saveSession(session);
+      }
     }
   );
 
@@ -66,20 +76,27 @@ export default function HomeScreen() {
     toggleSession();
   }, [toggleSession]);
 
-  const toggleOutputMode = (mode: 'vibration' | 'sound') => {
-    if (mode === 'vibration') {
-      setOutputMode((prev) =>
-        prev === 'vibration' ? 'sound' : prev === 'both' ? 'sound' : 'both'
-      );
-    } else {
-      setOutputMode((prev) =>
-        prev === 'sound' ? 'vibration' : prev === 'both' ? 'vibration' : 'both'
-      );
-    }
-  };
+  // 音トグル
+  const toggleSound = useCallback(() => {
+    setIsSoundEnabled((prev) => {
+      // 両方OFFになる場合はバイブをONにする
+      if (prev && !isVibrationEnabled) {
+        setIsVibrationEnabled(true);
+      }
+      return !prev;
+    });
+  }, [isVibrationEnabled]);
 
-  const isVibrationEnabled = outputMode === 'vibration' || outputMode === 'both';
-  const isSoundEnabled = outputMode === 'sound' || outputMode === 'both';
+  // バイブトグル
+  const toggleVibration = useCallback(() => {
+    setIsVibrationEnabled((prev) => {
+      // 両方OFFになる場合は音をONにする
+      if (prev && !isSoundEnabled) {
+        setIsSoundEnabled(true);
+      }
+      return !prev;
+    });
+  }, [isSoundEnabled]);
 
   return (
     <View style={styles.container}>
@@ -135,17 +152,17 @@ export default function HomeScreen() {
             <Pressable
               style={[
                 styles.controlButton,
-                !isVibrationEnabled && styles.controlButtonInactive,
+                isVibrationEnabled && styles.controlButtonActive,
               ]}
-              onPress={() => toggleOutputMode('vibration')}
+              onPress={toggleVibration}
             >
               <Ionicons
                 name="phone-portrait"
                 size={24}
-                color={isVibrationEnabled ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'}
+                color={isVibrationEnabled ? '#2a73ea' : 'rgba(255,255,255,0.4)'}
               />
             </Pressable>
-            <Text style={[styles.controlLabel, !isVibrationEnabled && styles.controlLabelInactive]}>
+            <Text style={[styles.controlLabel, isVibrationEnabled && styles.controlLabelActive]}>
               バイブ
             </Text>
           </View>
@@ -155,6 +172,7 @@ export default function HomeScreen() {
             onPress={handleTogglePlay}
             style={({ pressed }) => [
               styles.playButton,
+              isPlaying && styles.playButtonStop,
               pressed && styles.playButtonPressed,
             ]}
           >
@@ -173,12 +191,12 @@ export default function HomeScreen() {
                 styles.controlButton,
                 isSoundEnabled && styles.controlButtonActive,
               ]}
-              onPress={() => toggleOutputMode('sound')}
+              onPress={toggleSound}
             >
               <Ionicons
-                name="volume-high"
+                name={isSoundEnabled ? 'volume-high' : 'volume-mute'}
                 size={24}
-                color={isSoundEnabled ? '#2a73ea' : 'rgba(255,255,255,0.3)'}
+                color={isSoundEnabled ? '#2a73ea' : 'rgba(255,255,255,0.4)'}
               />
             </Pressable>
             <Text style={[styles.controlLabel, isSoundEnabled && styles.controlLabelActive]}>
@@ -328,9 +346,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  controlButtonInactive: {
-    opacity: 0.6,
-  },
   controlButtonActive: {
     backgroundColor: 'rgba(42, 115, 234, 0.2)',
     borderColor: 'rgba(42, 115, 234, 0.3)',
@@ -341,9 +356,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  controlLabelInactive: {
-    opacity: 0.6,
   },
   controlLabelActive: {
     color: '#2a73ea',
@@ -361,12 +373,16 @@ const styles = StyleSheet.create({
     shadowRadius: 30,
     elevation: 10,
   },
+  playButtonStop: {
+    backgroundColor: '#ef4444',
+    shadowColor: '#ef4444',
+  },
   playButtonPressed: {
     transform: [{ scale: 0.95 }],
   },
   bottomArea: {
     backgroundColor: '#16181b',
-    paddingBottom: 80, // タブバーの高さ分
+    paddingBottom: 80,
   },
   adContainer: {
     alignItems: 'center',
