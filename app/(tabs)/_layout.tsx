@@ -1,28 +1,30 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+// app/(tabs)/_layout.tsx - タブレイアウト（mockデザイン準拠）
 
-/**
- * タブナビゲーション設定
- */
+import { Tabs } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#888888',
-        tabBarStyle: {
-          backgroundColor: '#121212',
-          borderTopColor: '#2A2A2A',
-        },
         headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarBackground: () => (
+          <BlurView intensity={80} style={StyleSheet.absoluteFill} />
+        ),
+        tabBarActiveTintColor: '#2a73ea',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'ホーム',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} color={color} />
           ),
         }}
       />
@@ -30,8 +32,8 @@ export default function TabLayout() {
         name="presets"
         options={{
           title: 'プリセット',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="folder" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'list' : 'list-outline'} color={color} />
           ),
         }}
       />
@@ -39,8 +41,8 @@ export default function TabLayout() {
         name="stats"
         options={{
           title: '統計',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="stats-chart" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'analytics' : 'analytics-outline'} color={color} />
           ),
         }}
       />
@@ -48,11 +50,32 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: '設定',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+function TabIcon({ name, color }: { name: keyof typeof Ionicons.glyphMap; color: string }) {
+  return <Ionicons name={name} size={24} color={color} />;
+}
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    backgroundColor: 'rgba(5, 5, 5, 0.9)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+    paddingTop: 8,
+    paddingBottom: 24,
+    height: 80,
+  },
+  tabBarLabel: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    marginTop: 4,
+  },
+});

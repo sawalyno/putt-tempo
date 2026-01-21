@@ -1,111 +1,87 @@
-// app/(tabs)/settings.tsx - 設定画面
+// app/(tabs)/settings.tsx - 設定画面（mockデザイン準拠）
 
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { usePurchase } from '@/hooks/usePurchase';
-
-interface SettingItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value?: string;
-  onPress?: () => void;
-  iconColor?: string;
-  showArrow?: boolean;
-}
-
-function SettingItem({
-  icon,
-  label,
-  value,
-  onPress,
-  iconColor = '#888888',
-  showArrow = true,
-}: SettingItemProps) {
-  return (
-    <Pressable style={styles.item} onPress={onPress}>
-      <View style={[styles.itemIcon, { backgroundColor: `${iconColor}20` }]}>
-        <Ionicons name={icon} size={20} color={iconColor} />
-      </View>
-      <Text style={styles.itemLabel}>{label}</Text>
-      <View style={styles.itemRight}>
-        {value && <Text style={styles.itemValue}>{value}</Text>}
-        {showArrow && onPress && (
-          <Ionicons name="chevron-forward" size={20} color="#888888" />
-        )}
-      </View>
-    </Pressable>
-  );
-}
+import { usePremiumStatus, usePurchase } from '@/hooks/usePurchase';
 
 export default function SettingsScreen() {
-  const { user, signOut } = useAuth();
-  const { isPremium, restore, isLoading } = usePurchase();
+  const { user, isAnonymous } = useAuth();
+  const { isPremium } = usePremiumStatus();
+  const { restorePurchases } = usePurchase();
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const buildNumber = Constants.expoConfig?.ios?.buildNumber || 
+                      Constants.expoConfig?.android?.versionCode || '1';
 
-  const handleSignOut = () => {
-    Alert.alert(
-      'ログアウト',
-      'ログアウトしますか？',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: 'ログアウト',
-          style: 'destructive',
-          onPress: signOut,
-        },
-      ]
-    );
-  };
-
-  const handleRestore = async () => {
+  const handleRestorePurchases = async () => {
     try {
-      const restored = await restore();
-      if (restored) {
-        Alert.alert('復元完了', '購入が復元されました');
-      } else {
-        Alert.alert('復元失敗', '復元可能な購入が見つかりませんでした');
-      }
-    } catch {
-      Alert.alert('エラー', '復元に失敗しました');
+      await restorePurchases();
+      Alert.alert('完了', '購入の復元が完了しました');
+    } catch (error) {
+      Alert.alert('エラー', '購入の復元に失敗しました');
     }
   };
 
-  const handleContact = () => {
-    Linking.openURL('mailto:support@example.com?subject=Putt Tempo お問い合わせ');
+  const handleCreateAccount = () => {
+    // TODO: アカウント作成フローへ
+    Alert.alert('準備中', 'アカウント作成機能は準備中です');
+  };
+
+  const openLink = (url: string) => {
+    Linking.openURL(url).catch(() => {
+      Alert.alert('エラー', 'リンクを開けませんでした');
+    });
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* ヘッダー */}
-      <View style={styles.header}>
-        <Text style={styles.title}>設定</Text>
-      </View>
+      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+        <View style={styles.header}>
+          <View style={styles.headerLogo}>
+            <Ionicons name="golf" size={28} color="#2a73ea" />
+            <Text style={styles.headerTitle}>Putt Tempo</Text>
+          </View>
+        </View>
+      </SafeAreaView>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ページタイトル */}
+        <Text style={styles.pageTitle}>設定</Text>
+
         {/* アカウントセクション */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>アカウント</Text>
           <View style={styles.card}>
-            <SettingItem
-              icon="person"
-              label="ユーザーID"
-              value={user?.id?.slice(0, 8) || '-'}
-              iconColor="#3B82F6"
-              showArrow={false}
-            />
-            <SettingItem
-              icon="mail"
-              label="メールアドレス"
-              value={user?.email || '未連携'}
-              iconColor="#10B981"
-              onPress={() => !user?.email && router.push('/settings/email')}
-            />
+            <View style={styles.accountItem}>
+              <View style={styles.accountInfo}>
+                <View style={styles.accountAvatar}>
+                  <Ionicons name="person" size={24} color="#2a73ea" />
+                </View>
+                <View style={styles.accountDetails}>
+                  <Text style={styles.accountName}>
+                    👤 {isAnonymous ? 'ゲストユーザー' : 'ログイン中'}
+                  </Text>
+                  <Text style={styles.accountDescription}>
+                    {isAnonymous ? 'データは同期されていません' : user?.email || 'データ同期中'}
+                  </Text>
+                </View>
+              </View>
+              {isAnonymous && (
+                <Pressable onPress={handleCreateAccount}>
+                  <Text style={styles.accountAction}>アカウントを作成 →</Text>
+                </Pressable>
+              )}
+            </View>
           </View>
         </View>
 
@@ -113,140 +89,219 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>プラン</Text>
           <View style={styles.card}>
-            <SettingItem
-              icon="star"
-              label="現在のプラン"
-              value={isPremium ? 'プレミアム' : '無料'}
-              iconColor="#F59E0B"
+            <Pressable 
+              style={styles.menuItem}
               onPress={() => !isPremium && router.push('/premium')}
-            />
-            {!isPremium && (
-              <SettingItem
-                icon="refresh"
-                label="購入を復元"
-                iconColor="#8B5CF6"
-                onPress={handleRestore}
-              />
-            )}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons 
+                  name="trophy" 
+                  size={20} 
+                  color={isPremium ? '#F59E0B' : '#6b7280'} 
+                />
+                <Text style={styles.menuItemText}>
+                  {isPremium ? 'プレミアムプラン' : '無料プラン'}
+                </Text>
+              </View>
+              {!isPremium && (
+                <Text style={styles.menuItemAction}>プレミアムにアップグレード →</Text>
+              )}
+            </Pressable>
           </View>
         </View>
 
-        {/* アプリ情報セクション */}
+        {/* アプリについてセクション */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>アプリ情報</Text>
+          <Text style={styles.sectionTitle}>アプリについて</Text>
           <View style={styles.card}>
-            <SettingItem
-              icon="information-circle"
-              label="バージョン"
-              value={appVersion}
-              iconColor="#888888"
-              showArrow={false}
-            />
-            <SettingItem
-              icon="document-text"
-              label="利用規約"
-              iconColor="#888888"
-              onPress={() => Linking.openURL('https://example.com/terms')}
-            />
-            <SettingItem
-              icon="shield-checkmark"
-              label="プライバシーポリシー"
-              iconColor="#888888"
-              onPress={() => Linking.openURL('https://example.com/privacy')}
-            />
-            <SettingItem
-              icon="chatbubble"
-              label="お問い合わせ"
-              iconColor="#888888"
-              onPress={handleContact}
-            />
+            <View style={styles.menuItem}>
+              <Text style={styles.menuItemText}>バージョン</Text>
+              <Text style={styles.menuItemValue}>v{appVersion} ({buildNumber})</Text>
+            </View>
+            <View style={styles.menuItemDivider} />
+            <Pressable 
+              style={styles.menuItem}
+              onPress={() => openLink('https://example.com/terms')}
+            >
+              <Text style={styles.menuItemText}>利用規約</Text>
+              <Ionicons name="open-outline" size={16} color="#6b7280" />
+            </Pressable>
+            <View style={styles.menuItemDivider} />
+            <Pressable 
+              style={styles.menuItem}
+              onPress={() => openLink('https://example.com/privacy')}
+            >
+              <Text style={styles.menuItemText}>プライバシーポリシー</Text>
+              <Ionicons name="open-outline" size={16} color="#6b7280" />
+            </Pressable>
+            <View style={styles.menuItemDivider} />
+            <Pressable 
+              style={styles.menuItem}
+              onPress={() => openLink('mailto:support@example.com')}
+            >
+              <Text style={styles.menuItemText}>お問い合わせ</Text>
+              <Ionicons name="mail-outline" size={16} color="#6b7280" />
+            </Pressable>
           </View>
         </View>
 
-        {/* ログアウト */}
-        <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-          <Ionicons name="log-out" size={20} color="#EF4444" />
-          <Text style={styles.signOutText}>ログアウト</Text>
-        </Pressable>
+        {/* 購入を復元 */}
+        <View style={styles.restoreContainer}>
+          <Pressable onPress={handleRestorePurchases}>
+            <Text style={styles.restoreText}>🔄 購入を復元</Text>
+          </Pressable>
+        </View>
 
-        <View style={{ height: 32 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#050505',
+  },
+  headerSafeArea: {
+    backgroundColor: 'rgba(5, 5, 5, 0.8)',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  headerLogo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
+    letterSpacing: -0.5,
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 16,
+    paddingBottom: 120,
+  },
+  pageTitle: {
+    fontSize: 32,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: '#ffffff',
+    letterSpacing: -1,
+    marginBottom: 24,
+    marginTop: 16,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#888888',
+    fontFamily: 'Manrope_600SemiBold',
+    color: '#6b7280',
     textTransform: 'uppercase',
-    marginBottom: 12,
+    letterSpacing: 1,
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
   card: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#121212',
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
     overflow: 'hidden',
   },
-  item: {
+  accountItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  itemIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    justifyContent: 'center',
+  accountInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  itemLabel: {
+    gap: 16,
     flex: 1,
-    fontSize: 16,
-    color: '#FFFFFF',
   },
-  itemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  itemValue: {
-    fontSize: 14,
-    color: '#888888',
-  },
-  signOutButton: {
-    flexDirection: 'row',
+  accountAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(42, 115, 234, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    gap: 8,
-    marginTop: 8,
   },
-  signOutText: {
+  accountDetails: {
+    flex: 1,
+  },
+  accountName: {
     fontSize: 16,
-    color: '#EF4444',
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
+  },
+  accountDescription: {
+    fontSize: 12,
+    fontFamily: 'Manrope_400Regular',
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  accountAction: {
+    fontSize: 14,
+    fontFamily: 'Manrope_700Bold',
+    color: '#2a73ea',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontFamily: 'Manrope_500Medium',
+    color: '#ffffff',
+  },
+  menuItemValue: {
+    fontSize: 14,
+    fontFamily: 'Manrope_400Regular',
+    color: '#6b7280',
+  },
+  menuItemAction: {
+    fontSize: 14,
+    fontFamily: 'Manrope_700Bold',
+    color: '#F59E0B',
+  },
+  menuItemDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  restoreContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  restoreText: {
+    fontSize: 14,
+    fontFamily: 'Manrope_500Medium',
+    color: '#6b7280',
+    textDecorationLine: 'underline',
+    textDecorationColor: 'rgba(107, 114, 128, 0.3)',
+    paddingVertical: 8,
+  },
+  bottomSpacer: {
+    height: 80,
   },
 });

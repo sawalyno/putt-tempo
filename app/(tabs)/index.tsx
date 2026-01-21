@@ -1,15 +1,13 @@
-// app/(tabs)/index.tsx - ホーム画面
+// app/(tabs)/index.tsx - ホーム画面（mockデザイン準拠）
 
 import { useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Pendulum } from '@/components/Pendulum';
-import { PlayButton } from '@/components/PlayButton';
 import { PresetSelector } from '@/components/PresetSelector';
-import { OutputModeToggle } from '@/components/OutputModeToggle';
 import { BannerAd } from '@/components/ads/BannerAd';
 import { useMetronomeSession } from '@/hooks/useMetronomeSession';
 import { useAllPresets, usePreset } from '@/hooks/usePresets';
@@ -57,7 +55,6 @@ export default function HomeScreen() {
     selectedPreset.isDefault ? null : selectedPreset.id,
     selectedPreset.name,
     async (session) => {
-      // セッション終了時に記録を保存
       await saveSession(session);
     }
   );
@@ -71,61 +68,146 @@ export default function HomeScreen() {
     toggleSession();
   }, [toggleSession]);
 
+  const toggleOutputMode = (mode: 'vibration' | 'sound') => {
+    if (mode === 'vibration') {
+      setOutputMode(outputMode === 'vibration' ? 'sound' : 
+                    outputMode === 'both' ? 'sound' : 'vibration');
+    } else {
+      setOutputMode(outputMode === 'sound' ? 'vibration' : 
+                    outputMode === 'both' ? 'vibration' : 'sound');
+    }
+  };
+
+  const isVibrationEnabled = outputMode === 'vibration' || outputMode === 'both';
+  const isSoundEnabled = outputMode === 'sound' || outputMode === 'both';
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* ヘッダー */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Putt Tempo</Text>
-        <Pressable
-          onPress={() => router.push('/(tabs)/settings')}
-          style={styles.settingsButton}
-        >
-          <Ionicons name="settings-outline" size={24} color="#888888" />
-        </Pressable>
-      </View>
-
-      {/* メインコンテンツ */}
-      <View style={styles.content}>
-        {/* ビジュアルペンダム */}
-        <Pendulum
-          isPlaying={isPlaying}
-          currentPhase={currentPhase}
-          bpm={selectedPreset.bpm}
-          backRatio={backRatio}
-          forwardRatio={forwardRatio}
-        />
-
-        {/* BPM・比率表示 */}
-        <View style={styles.displayContainer}>
-          <Text style={styles.bpmText}>{selectedPreset.bpm} BPM</Text>
-          <Text style={styles.ratioText}>
-            {backRatio} : {forwardRatio}
-          </Text>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* ヘッダー */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Putt Tempo</Text>
         </View>
 
-        {/* プリセット選択 */}
-        <Pressable
-          onPress={() => setIsPresetModalVisible(true)}
-          style={styles.presetButton}
-        >
-          <View style={styles.presetButtonContent}>
-            <Ionicons name="folder-outline" size={20} color="#888888" />
-            <Text style={styles.presetButtonText}>{selectedPreset.name}</Text>
+        {/* 振り子エリア */}
+        <View style={styles.pendulumArea}>
+          <Pendulum
+            isPlaying={isPlaying}
+            currentPhase={currentPhase}
+            bpm={selectedPreset.bpm}
+            backRatio={backRatio}
+            forwardRatio={forwardRatio}
+          />
+
+          {/* BPM・比率表示 */}
+          <View style={styles.displayContainer}>
+            <View style={styles.bpmContainer}>
+              <Text style={styles.bpmText}>{selectedPreset.bpm}</Text>
+              <Text style={styles.bpmLabel}>BPM</Text>
+            </View>
+            <View style={styles.ratioContainer}>
+              <View style={styles.ratioDivider} />
+              <Text style={styles.ratioText}>
+                {backRatio} : {forwardRatio} Ratio
+              </Text>
+              <View style={styles.ratioDivider} />
+            </View>
           </View>
-          <Ionicons name="chevron-down" size={20} color="#888888" />
-        </Pressable>
-
-        {/* 再生/停止ボタン */}
-        <View style={styles.playButtonContainer}>
-          <PlayButton isPlaying={isPlaying} onPress={handleTogglePlay} />
         </View>
 
-        {/* 出力モード切替 */}
-        <OutputModeToggle mode={outputMode} onChange={setOutputMode} />
-      </View>
+        {/* 下部コントロールパネル */}
+        <View style={styles.controlPanel}>
+          {/* プリセット選択 */}
+          <View style={styles.presetSection}>
+            <Text style={styles.presetLabel}>プリセット</Text>
+            <Pressable
+              onPress={() => setIsPresetModalVisible(true)}
+              style={styles.presetButton}
+            >
+              <Text style={styles.presetButtonText}>{selectedPreset.name}</Text>
+              <Ionicons name="chevron-down" size={20} color="rgba(255,255,255,0.4)" />
+            </Pressable>
+          </View>
+
+          {/* コントロールボタン */}
+          <View style={styles.controlButtons}>
+            {/* バイブボタン */}
+            <View style={styles.controlItem}>
+              <Pressable
+                style={[
+                  styles.controlButton,
+                  isVibrationEnabled && styles.controlButtonActive,
+                ]}
+                onPress={() => toggleOutputMode('vibration')}
+              >
+                <Ionicons
+                  name="phone-portrait"
+                  size={24}
+                  color={isVibrationEnabled ? '#2a73ea' : 'rgba(255,255,255,0.6)'}
+                />
+              </Pressable>
+              <Text style={[
+                styles.controlLabel,
+                isVibrationEnabled && styles.controlLabelActive
+              ]}>
+                バイブ
+              </Text>
+            </View>
+
+            {/* 再生ボタン */}
+            <Pressable
+              onPress={handleTogglePlay}
+              style={({ pressed }) => [
+                styles.playButton,
+                isPlaying && styles.playButtonPlaying,
+                pressed && styles.playButtonPressed,
+              ]}
+            >
+              <LinearGradient
+                colors={isPlaying ? ['#ef4444', '#dc2626'] : ['#2a73ea', '#1d4ed8']}
+                style={styles.playButtonGradient}
+              >
+                <Ionicons
+                  name={isPlaying ? 'stop' : 'play'}
+                  size={40}
+                  color="#ffffff"
+                  style={!isPlaying && { marginLeft: 4 }}
+                />
+              </LinearGradient>
+            </Pressable>
+
+            {/* 音ボタン */}
+            <View style={styles.controlItem}>
+              <Pressable
+                style={[
+                  styles.controlButton,
+                  isSoundEnabled && styles.controlButtonActive,
+                ]}
+                onPress={() => toggleOutputMode('sound')}
+              >
+                <Ionicons
+                  name="volume-high"
+                  size={24}
+                  color={isSoundEnabled ? '#2a73ea' : 'rgba(255,255,255,0.6)'}
+                />
+              </Pressable>
+              <Text style={[
+                styles.controlLabel,
+                isSoundEnabled && styles.controlLabelActive
+              ]}>
+                音
+              </Text>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
 
       {/* 広告バナー（無料ユーザーのみ） */}
-      {!isPremium && <BannerAd />}
+      {!isPremium && (
+        <View style={styles.adContainer}>
+          <BannerAd />
+        </View>
+      )}
 
       {/* プリセット選択モーダル */}
       <PresetSelector
@@ -135,70 +217,192 @@ export default function HomeScreen() {
         onSelect={handlePresetSelect}
         onClose={() => setIsPresetModalVisible(false)}
       />
-    </SafeAreaView>
+
+      {/* 背景グロー効果 */}
+      <View style={styles.glowTopLeft} />
+      <View style={styles.glowBottomRight} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#050505',
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: 20,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: '#ffffff',
+    letterSpacing: -0.5,
   },
-  settingsButton: {
-    padding: 8,
-  },
-  content: {
+  pendulumArea: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   displayContainer: {
     alignItems: 'center',
-    marginVertical: 24,
+    marginTop: 8,
+  },
+  bpmContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
   bpmText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: 64,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: '#ffffff',
+    letterSpacing: -2,
+  },
+  bpmLabel: {
+    fontSize: 18,
+    fontFamily: 'Manrope_500Medium',
+    color: 'rgba(255,255,255,0.4)',
+    marginLeft: 8,
+  },
+  ratioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  ratioDivider: {
+    width: 16,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   ratioText: {
-    fontSize: 24,
-    color: '#888888',
-    marginTop: 8,
+    fontSize: 20,
+    fontFamily: 'Manrope_700Bold',
+    color: '#2a73ea',
+  },
+  controlPanel: {
+    backgroundColor: '#161616',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 120,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  presetSection: {
+    marginBottom: 24,
+  },
+  presetLabel: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   presetButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#050505',
+    borderWidth: 1,
+    borderColor: '#2d343d',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    width: 256,
+    paddingVertical: 16,
   },
-  presetButtonContent: {
+  presetButtonText: {
+    fontSize: 14,
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
+  },
+  controlButtons: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  controlItem: {
     alignItems: 'center',
     gap: 8,
   },
-  presetButtonText: {
-    fontSize: 16,
-    color: '#FFFFFF',
+  controlButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#050505',
+    borderWidth: 1,
+    borderColor: '#2d343d',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  playButtonContainer: {
-    marginVertical: 32,
+  controlButtonActive: {
+    backgroundColor: 'rgba(42, 115, 234, 0.2)',
+    borderColor: 'rgba(42, 115, 234, 0.3)',
+  },
+  controlLabel: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  controlLabelActive: {
+    color: '#2a73ea',
+  },
+  playButton: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    overflow: 'hidden',
+  },
+  playButtonPlaying: {},
+  playButtonPressed: {
+    transform: [{ scale: 0.95 }],
+  },
+  playButtonGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2a73ea',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+  },
+  adContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    backgroundColor: 'rgba(5, 5, 5, 0.5)',
+    paddingVertical: 8,
+  },
+  glowTopLeft: {
+    position: 'absolute',
+    top: '-10%',
+    left: '-10%',
+    width: '40%',
+    height: '30%',
+    backgroundColor: 'rgba(42, 115, 234, 0.1)',
+    borderRadius: 9999,
+    zIndex: -1,
+  },
+  glowBottomRight: {
+    position: 'absolute',
+    bottom: '-5%',
+    right: '-5%',
+    width: '40%',
+    height: '30%',
+    backgroundColor: 'rgba(42, 115, 234, 0.05)',
+    borderRadius: 9999,
+    zIndex: -1,
   },
 });

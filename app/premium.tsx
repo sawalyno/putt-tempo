@@ -1,6 +1,6 @@
-// app/premium.tsx - プレミアム画面（モーダル）
+// app/premium.tsx - プレミアムアップグレード画面（mockデザイン準拠）
 
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,302 +8,327 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { usePurchase } from '@/hooks/usePurchase';
 
-interface FeatureItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
-  isPremium?: boolean;
-}
-
-function FeatureItem({
-  icon,
-  title,
-  description,
-  isPremium = true,
-}: FeatureItemProps) {
-  return (
-    <View style={styles.featureItem}>
-      <View
-        style={[
-          styles.featureIcon,
-          isPremium ? styles.featureIconPremium : styles.featureIconFree,
-        ]}
-      >
-        <Ionicons
-          name={icon}
-          size={24}
-          color={isPremium ? '#F59E0B' : '#888888'}
-        />
-      </View>
-      <View style={styles.featureContent}>
-        <Text style={styles.featureTitle}>{title}</Text>
-        <Text style={styles.featureDescription}>{description}</Text>
-      </View>
-      {isPremium && (
-        <View style={styles.premiumBadge}>
-          <Text style={styles.premiumBadgeText}>PRO</Text>
-        </View>
-      )}
-    </View>
-  );
-}
+// 特典リスト
+const FEATURES = [
+  {
+    title: 'プリセット無制限',
+    description: '練習内容に合わせて保存が可能',
+  },
+  {
+    title: '10種類のサウンド',
+    description: '集中力を高める最適な音を選択',
+  },
+  {
+    title: '広告非表示',
+    description: '邪魔されずにトレーニングに没頭',
+  },
+];
 
 export default function PremiumScreen() {
-  const { purchase, restore, isLoading } = usePurchase();
+  const { purchasePremium, restorePurchases, isLoading } = usePurchase();
 
   const handlePurchase = async () => {
     try {
-      const success = await purchase();
-      if (success) {
-        Alert.alert('購入完了', 'プレミアムにアップグレードされました！', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
+      await purchasePremium();
+      Alert.alert('成功', 'プレミアムへのアップグレードが完了しました！', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      if (error?.userCancelled) {
+        return;
       }
-    } catch {
-      Alert.alert('エラー', '購入に失敗しました。しばらくしてからお試しください。');
+      Alert.alert('エラー', '購入処理に失敗しました。もう一度お試しください。');
     }
   };
 
   const handleRestore = async () => {
     try {
-      const restored = await restore();
-      if (restored) {
-        Alert.alert('復元完了', '購入が復元されました！', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
-      } else {
-        Alert.alert('復元失敗', '復元可能な購入が見つかりませんでした');
-      }
-    } catch {
+      await restorePurchases();
+      Alert.alert('完了', '購入の復元が完了しました', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error) {
       Alert.alert('エラー', '復元に失敗しました');
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* ヘッダー */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color="#FFFFFF" />
-        </Pressable>
-      </View>
+  const openLink = (url: string) => {
+    Linking.openURL(url).catch(() => {});
+  };
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+  return (
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {/* ヘッダー */}
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <View style={styles.dragHandle} />
+          <Pressable onPress={() => router.back()} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color="#6b7280" />
+          </Pressable>
+        </View>
+
         {/* タイトル */}
         <View style={styles.titleContainer}>
-          <View style={styles.titleIcon}>
-            <Ionicons name="star" size={40} color="#F59E0B" />
-          </View>
-          <Text style={styles.title}>Putt Tempo Pro</Text>
-          <Text style={styles.subtitle}>
-            全ての機能をアンロックして{'\n'}練習を最大限に活用しよう
-          </Text>
+          <Text style={styles.premiumLabel}>⭐ プレミアム ⭐</Text>
+          <Text style={styles.title}>もっと自由に練習しよう</Text>
         </View>
 
-        {/* 特典一覧 */}
-        <View style={styles.features}>
-          <FeatureItem
-            icon="infinite"
-            title="無制限のプリセット"
-            description="お気に入りの設定を好きなだけ保存"
-          />
-          <FeatureItem
-            icon="musical-notes"
-            title="10種類の音色"
-            description="全ての音色にアクセス可能"
-          />
-          <FeatureItem
-            icon="stats-chart"
-            title="詳細な統計"
-            description="過去1年間の練習履歴を確認"
-          />
-          <FeatureItem
-            icon="close-circle"
-            title="広告なし"
-            description="集中して練習に取り組める"
-          />
-        </View>
-
-        {/* 価格 */}
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>買い切り価格</Text>
-          <Text style={styles.price}>¥480</Text>
-          <Text style={styles.priceNote}>一度の購入で永久利用可能</Text>
-        </View>
-
-        {/* 購入ボタン */}
-        <Pressable onPress={handlePurchase} disabled={isLoading}>
+        {/* グラフィック */}
+        <View style={styles.graphicContainer}>
           <LinearGradient
-            colors={['#F59E0B', '#D97706']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.purchaseButton, isLoading && styles.purchaseButtonDisabled]}
+            colors={['rgba(245, 158, 11, 0.2)', 'rgba(42, 115, 234, 0.1)', 'transparent']}
+            style={styles.graphicGradient}
           >
-            <Text style={styles.purchaseButtonText}>
-              {isLoading ? '処理中...' : 'プレミアムを購入'}
-            </Text>
+            <View style={styles.soundWave}>
+              <View style={[styles.soundBar, { height: 32 }]} />
+              <View style={[styles.soundBar, styles.soundBarCenter, { height: 48 }]} />
+              <View style={[styles.soundBar, { height: 32 }]} />
+            </View>
           </LinearGradient>
-        </Pressable>
+        </View>
 
-        {/* 復元リンク */}
-        <Pressable style={styles.restoreButton} onPress={handleRestore}>
-          <Text style={styles.restoreButtonText}>以前の購入を復元</Text>
-        </Pressable>
+        {/* 特典リスト */}
+        <View style={styles.featuresContainer}>
+          {FEATURES.map((feature, index) => (
+            <View key={index} style={styles.featureItem}>
+              <View style={styles.featureCheck}>
+                <Ionicons name="checkmark" size={20} color="#22c55e" />
+              </View>
+              <View style={styles.featureInfo}>
+                <Text style={styles.featureTitle}>{feature.title}</Text>
+                <Text style={styles.featureDescription}>{feature.description}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
 
-        {/* 注意事項 */}
-        <Text style={styles.disclaimer}>
-          お支払いはApple/Google アカウントに請求されます。{'\n'}
-          購入後のキャンセル・返金はストアのポリシーに従います。
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+        {/* CTA */}
+        <View style={styles.ctaContainer}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.purchaseButton,
+              pressed && styles.purchaseButtonPressed,
+              isLoading && styles.purchaseButtonDisabled,
+            ]}
+            onPress={handlePurchase}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Text style={styles.purchaseButtonTitle}>今すぐアップグレード</Text>
+                <Text style={styles.purchaseButtonPrice}>¥480（買い切り）</Text>
+              </>
+            )}
+          </Pressable>
+
+          {/* 復元・注記 */}
+          <View style={styles.footer}>
+            <Pressable onPress={handleRestore}>
+              <Text style={styles.restoreText}>購入を復元</Text>
+            </Pressable>
+            <Text style={styles.noteText}>一度購入すれば永久に利用可能</Text>
+            <View style={styles.legalLinks}>
+              <Pressable onPress={() => openLink('https://example.com/terms')}>
+                <Text style={styles.legalLink}>利用規約</Text>
+              </Pressable>
+              <Pressable onPress={() => openLink('https://example.com/privacy')}>
+                <Text style={styles.legalLink}>プライバシーポリシー</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#1A1A1A',
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 0,
+  },
+  headerSpacer: {
+    width: 40,
+    height: 40,
+  },
+  dragHandle: {
+    width: 48,
+    height: 6,
+    backgroundColor: '#4b5563',
+    borderRadius: 3,
   },
   closeButton: {
-    padding: 8,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 24,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    paddingTop: 32,
+    paddingBottom: 16,
   },
-  titleIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
+  premiumLabel: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontFamily: 'Manrope_800ExtraBold',
+    color: '#F59E0B',
+    letterSpacing: -0.5,
+    textShadowColor: 'rgba(245, 158, 11, 0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#888888',
+  title: {
+    fontSize: 20,
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
+    letterSpacing: -0.5,
     textAlign: 'center',
-    lineHeight: 24,
+    paddingHorizontal: 24,
   },
-  features: {
-    marginBottom: 32,
+  graphicContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
+  graphicGradient: {
+    width: '100%',
+    height: 128,
+    borderRadius: 12,
+    marginHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  soundWave: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    height: 48,
+  },
+  soundBar: {
+    width: 6,
+    backgroundColor: 'rgba(245, 158, 11, 0.6)',
+    borderRadius: 3,
+  },
+  soundBarCenter: {
+    backgroundColor: '#F59E0B',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+  },
+  featuresContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    gap: 12,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
+    gap: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
-  featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
+  featureCheck: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
     alignItems: 'center',
-    marginRight: 12,
+    justifyContent: 'center',
   },
-  featureIconPremium: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-  },
-  featureIconFree: {
-    backgroundColor: '#2A2A2A',
-  },
-  featureContent: {
+  featureInfo: {
     flex: 1,
   },
   featureTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
   },
   featureDescription: {
     fontSize: 12,
-    color: '#888888',
+    fontFamily: 'Manrope_400Regular',
+    color: '#9ca3af',
+    marginTop: 2,
   },
-  premiumBadge: {
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  premiumBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  priceContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: '#888888',
-    marginBottom: 4,
-  },
-  price: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  priceNote: {
-    fontSize: 14,
-    color: '#888888',
-    marginTop: 4,
+  ctaContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   purchaseButton: {
-    borderRadius: 16,
-    paddingVertical: 18,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#2a73ea',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    shadowColor: '#2a73ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+  },
+  purchaseButtonPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
   },
   purchaseButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
-  purchaseButtonText: {
+  purchaseButtonTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000',
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
   },
-  restoreButton: {
-    alignItems: 'center',
-    padding: 16,
-  },
-  restoreButtonText: {
+  purchaseButtonPrice: {
     fontSize: 14,
-    color: '#3B82F6',
+    fontFamily: 'Manrope_400Regular',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
   },
-  disclaimer: {
-    fontSize: 12,
-    color: '#888888',
-    textAlign: 'center',
-    lineHeight: 18,
+  footer: {
+    alignItems: 'center',
+    marginTop: 24,
+    gap: 12,
+  },
+  restoreText: {
+    fontSize: 14,
+    fontFamily: 'Manrope_500Medium',
+    color: '#9ca3af',
+  },
+  noteText: {
+    fontSize: 11,
+    fontFamily: 'Manrope_500Medium',
+    color: '#6b7280',
+    letterSpacing: 0.5,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    gap: 16,
     marginTop: 8,
+  },
+  legalLink: {
+    fontSize: 10,
+    fontFamily: 'Manrope_400Regular',
+    color: '#4b5563',
   },
 });

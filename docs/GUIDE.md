@@ -228,7 +228,7 @@ Claude（claude.ai）に以下のプロンプトを投げて、Stitch用のプ�
 1. Google Stitch (https://stitch.google.com) にアクセス
 2. `docs/STITCH_PROMPT.md` の内容を貼り付けて実行
 3. Stitchが生成したプレビューを確認
-4. 各画面のスクリーンショットを保存（`docs/screenshots/` に配置）
+4. 各画面のスクリーンショットを保存（`docs/mock/` に配置）
 
 ### 4-3. DESIGN.mdを自動生成する
 
