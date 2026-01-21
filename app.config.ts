@@ -2,34 +2,37 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'My App',           // TODO: アプリ名を変更
-  slug: 'my-app',           // TODO: スラッグを変更
+  name: 'Putt Tempo',
+  slug: 'putt-tempo',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  scheme: 'myapp',          // TODO: スキームを変更
-  userInterfaceStyle: 'automatic',
+  scheme: 'putt-tempo',
+  userInterfaceStyle: 'dark',
   splash: {
     image: './assets/images/splash-icon.png',
     resizeMode: 'contain',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#121212',
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.yourname.myapp',  // TODO: バンドルIDを変更
+    bundleIdentifier: 'com.yourname.putt-tempo', // TODO: バンドルIDを変更
     config: {
-      googleMobileAdsAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',  // TODO: AdMob App ID
+      googleMobileAdsAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
+    },
+    infoPlist: {
+      UIBackgroundModes: ['audio'], // バックグラウンドオーディオ
     },
   },
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon.png',
-      backgroundColor: '#0a0a0a',
+      backgroundColor: '#121212',
     },
-    package: 'com.yourname.myapp',  // TODO: パッケージ名を変更
+    package: 'com.yourname.putt_tempo', // TODO: パッケージ名を変更
     versionCode: 1,
     config: {
-      googleMobileAdsAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',  // TODO: AdMob App ID
+      googleMobileAdsAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
     },
   },
   web: {
@@ -42,8 +45,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'react-native-google-mobile-ads',
       {
-        androidAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',  // TODO: AdMob App ID
-        iosAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',      // TODO: AdMob App ID
+        androidAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
+        iosAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
       },
     ],
   ],
@@ -54,10 +57,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Supabase設定（.envから読み込み）
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-    // AdMob広告ユニットID
-    admobBannerIdAndroid: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',    // TODO: バナー広告ID
-    admobBannerIdIos: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',        // TODO: バナー広告ID
-    admobRewardIdAndroid: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',    // TODO: リワード広告ID
-    admobRewardIdIos: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',        // TODO: リワード広告ID
+    // RevenueCat API Keys
+    revenueCatIosKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
+    revenueCatAndroidKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY,
+    // AdMob広告ユニットID（本番用はここに設定、開発時はテストIDが使用される）
+    admobBannerIdAndroid: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX', // TODO: バナー広告ID
+    admobBannerIdIos: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX', // TODO: バナー広告ID
   },
 });
