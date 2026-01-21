@@ -25,9 +25,10 @@ export function usePurchase() {
         .from('subscriptions')
         .select('plan')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // 行がない場合もエラーにしない
 
       if (error) throw error;
+      // データがない場合は無料プラン
       setIsPremium(data?.plan === 'premium');
     } catch (error) {
       console.error('Failed to check premium status:', error);

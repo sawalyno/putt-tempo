@@ -70,10 +70,11 @@ export function useMetronome(options: UseMetronomeOptions) {
       playFeedback(phase);
       onTick?.(phase);
 
+      // 現在のフェーズの長さだけ待ってから次へ
+      const currentDuration = isBack ? backDuration : forwardDuration;
       isBack = !isBack;
-      const nextDuration = isBack ? backDuration : forwardDuration;
 
-      timeoutRef.current = setTimeout(tick, nextDuration);
+      timeoutRef.current = setTimeout(tick, currentDuration);
     };
 
     // 最初のティック

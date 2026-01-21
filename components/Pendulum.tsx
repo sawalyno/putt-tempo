@@ -10,6 +10,7 @@ import Animated, {
   withSequence,
   Easing,
   cancelAnimation,
+  withSpring,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -23,10 +24,11 @@ interface PendulumProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PENDULUM_HEIGHT = 160;
-const MAX_ANGLE = 20; // degrees
+const MAX_ANGLE = 15; // degrees - 少し控えめに
 
 export function Pendulum({
   isPlaying,
+  currentPhase,
   bpm,
   backRatio,
   forwardRatio,
@@ -35,29 +37,31 @@ export function Pendulum({
 
   useEffect(() => {
     if (isPlaying && bpm > 0) {
-      // 1ビートの時間（ミリ秒）
-      const beatMs = 60000 / bpm;
+      // 1サイクルの時間（ミリ秒）
+      const cycleDuration = 60000 / bpm;
       const totalRatio = backRatio + forwardRatio;
-      const backMs = (backRatio / totalRatio) * beatMs;
-      const forwardMs = (forwardRatio / totalRatio) * beatMs;
+      const backMs = (backRatio / totalRatio) * cycleDuration;
+      const forwardMs = (forwardRatio / totalRatio) * cycleDuration;
 
-      // アニメーションシーケンス
+      // シンプルな振り子アニメーション
+      // back: 0 → MAX_ANGLE (backMs)
+      // forward: MAX_ANGLE → -MAX_ANGLE → 0 (forwardMs)
       rotation.value = withRepeat(
         withSequence(
-          // 中央から右へ（バックスイング）
+          // バックスイング: 右へ
           withTiming(MAX_ANGLE, {
-            duration: backMs / 2,
-            easing: Easing.inOut(Easing.sin),
+            duration: backMs,
+            easing: Easing.out(Easing.quad),
           }),
-          // 右から左へ（フォワードスイング）
-          withTiming(-MAX_ANGLE, {
-            duration: backMs / 2 + forwardMs / 2,
-            easing: Easing.inOut(Easing.sin),
+          // フォワードスイング: 左へ振り抜く
+          withTiming(-MAX_ANGLE * 0.3, {
+            duration: forwardMs * 0.7,
+            easing: Easing.in(Easing.quad),
           }),
-          // 左から中央へ
+          // 戻り
           withTiming(0, {
-            duration: forwardMs / 2,
-            easing: Easing.inOut(Easing.sin),
+            duration: forwardMs * 0.3,
+            easing: Easing.out(Easing.quad),
           })
         ),
         -1,
@@ -65,7 +69,10 @@ export function Pendulum({
       );
     } else {
       cancelAnimation(rotation);
-      rotation.value = withTiming(0, { duration: 300 });
+      rotation.value = withTiming(0, { 
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+      });
     }
   }, [isPlaying, bpm, backRatio, forwardRatio]);
 
