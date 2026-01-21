@@ -281,11 +281,74 @@ git commit -m "Add task management files"
 ## 🔗 STEP 5：SupabaseとCursorを連携
 
 ### やること
+
+#### 5-1. Supabaseプロジェクト作成
 1. https://supabase.com にアクセス
-2. 新規プロジェクト作成（プロジェクト名は任意）
-3. Supabase Dashboard で「Connect」→「Cursor」ボタンをクリック
-4. 表示される指示に従ってCursorに接続
-5. Cursorで接続完了を確認
+2. 新規プロジェクト作成（**1アプリ = 1プロジェクト**を推奨）
+3. プロジェクト作成後、**Project Settings** → **General** で **Reference ID** を確認・控えておく
+
+#### 5-2. グローバルMCP設定（初回のみ）
+
+**Access Tokenの取得:**
+1. Supabase Dashboard → **Account Settings**（右上アイコン）→ **Access Tokens**
+2. **Generate new token** をクリック
+3. 生成されたトークンをコピー
+
+**MCP設定ファイルの作成:**
+
+Windows: `%USERPROFILE%\.cursor\mcp.json`
+Mac/Linux: `~/.cursor/mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "YOUR_ACCESS_TOKEN_HERE"
+      ]
+    }
+  }
+}
+```
+
+#### 5-3. プロジェクト単位のMCP設定（各プロジェクトで実施）
+
+プロジェクトルートに `.cursor/mcp.json` を作成：
+
+```
+your-app/
+  └── .cursor/
+        └── mcp.json
+```
+
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref",
+        "YOUR_PROJECT_REF_HERE"
+      ]
+    }
+  }
+}
+```
+
+**`YOUR_PROJECT_REF_HERE`** を Supabase Dashboard の **Reference ID** に置き換えてください。
+
+> 💡 **ポイント**: グローバル設定にAccess Token、プロジェクト設定にProject Refを分けることで、セキュリティを保ちつつプロジェクトごとに切り替えできます。
+
+#### 5-4. 接続確認
+1. **Cursorを再起動**
+2. Composerで `@supabase` と入力してMCPが認識されることを確認
+3. `list_tables` などのコマンドが使えることを確認
 
 ---
 
