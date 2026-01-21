@@ -111,7 +111,7 @@ task09 → task10 → task12 ─→ task21（振り子）
 ```
 
 ## 残タスク
-- [ ] 音声ファイルの準備（assets/sounds/）
+- [x] 音声ファイルの準備（assets/sounds/）✅ 完了
 - [ ] RevenueCat API Keyの設定
 - [ ] AdMob App IDの設定
 - [ ] アプリアイコン・スプラッシュ画像の作成

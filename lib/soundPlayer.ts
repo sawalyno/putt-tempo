@@ -3,19 +3,17 @@
 import { Audio } from 'expo-av';
 import { SoundType } from '@/types';
 
-// 音声ファイルのマッピング（ファイルがない場合はnull）
-// 実際の音声ファイルを assets/sounds/ に配置した後、requireを有効にする
+// 音声ファイルのマッピング
 const SOUND_FILES: Partial<Record<SoundType, number>> = {
-  // TODO: 音声ファイルを配置後、以下のコメントを解除
-  // click: require('@/assets/sounds/click.mp3'),
-  // electronic: require('@/assets/sounds/electronic.mp3'),
-  // wood: require('@/assets/sounds/wood.mp3'),
-  // metal: require('@/assets/sounds/metal.mp3'),
-  // soft_beep: require('@/assets/sounds/soft_beep.mp3'),
-  // drum_stick: require('@/assets/sounds/drum_stick.mp3'),
-  // water_drop: require('@/assets/sounds/water_drop.mp3'),
-  // spring: require('@/assets/sounds/spring.mp3'),
-  // bell: require('@/assets/sounds/bell.mp3'),
+  click: require('@/assets/sounds/click.mp3'),
+  electronic: require('@/assets/sounds/electronic.mp3'),
+  wood: require('@/assets/sounds/wood.mp3'),
+  metal: require('@/assets/sounds/metal.mp3'),
+  soft_beep: require('@/assets/sounds/soft_beep.mp3'),
+  drum_stick: require('@/assets/sounds/drum_stick.mp3'),
+  water_drop: require('@/assets/sounds/water_drop.mp3'),
+  spring: require('@/assets/sounds/spring.mp3'),
+  bell: require('@/assets/sounds/bell.mp3'),
 };
 
 class SoundPlayer {
@@ -46,8 +44,7 @@ class SoundPlayer {
 
     const file = SOUND_FILES[soundType];
     if (!file) {
-      // 音声ファイルが未配置の場合は静かに無視（開発中）
-      // console.warn(`Sound file not found for: ${soundType}`);
+      console.warn(`Sound file not found for: ${soundType}`);
       return;
     }
 
@@ -71,7 +68,6 @@ class SoundPlayer {
       await this.loadSound(soundType);
       const loadedSound = this.sounds.get(soundType);
       if (!loadedSound) {
-        // ファイルがない場合は無視（開発中用）
         return;
       }
       return this.playLoadedSound(loadedSound);
