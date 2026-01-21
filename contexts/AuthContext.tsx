@@ -25,9 +25,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isLoggingOut = useRef(false); // ログアウト処理中フラグ
 
   // ユーザーデータの初期化（RPC呼び出し）
-  const initializeUserData = useCallback(async () => {
+  const initializeUserData = useCallback(async (userId?: string) => {
+    // 引数がない場合は現在のセッションから取得
+    const targetUserId = userId || user?.id;
+    
+    if (!targetUserId) {
+      console.log('ユーザーIDがないため初期化をスキップ');
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.rpc('initialize_user');
+      const { data, error } = await supabase.rpc('initialize_user', {
+        p_user_id: targetUserId,
+      });
 
       if (error) {
         console.error('ユーザーデータ初期化エラー:', error);
@@ -35,13 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data?.success) {
-        console.log('ユーザーデータ初期化成功:', data.user_id);
+        console.log('ユーザーデータ初期化成功:', targetUserId);
       }
     } catch (err) {
       console.error('ユーザーデータ初期化中にエラーが発生しました:', err);
       // エラーが発生してもアプリの動作は継続
     }
-  }, []);
+  }, [user?.id]);
 
   // 匿名認証
   const signInAnonymously = useCallback(async () => {
@@ -57,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         console.log('匿名認証成功:', data.user.id);
         // ユーザーデータを初期化
-        await initializeUserData();
+        await initializeUserData(data.user.id);
       }
     } catch (err) {
       console.error('匿名認証中にエラーが発生しました:', err);
@@ -104,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         
         // 4. ユーザーデータを初期化
-        await initializeUserData();
+        await initializeUserData(data.user.id);
       }
     } catch (err) {
       console.error('ログアウト処理中にエラーが発生しました:', err);
@@ -146,9 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInAnonymously().catch((err) => {
           console.error('初回匿名認証エラー:', err);
         });
-      } else {
+      } else if (session.user) {
         // セッションがある場合はユーザーデータを初期化（未初期化の場合）
-        initializeUserData().catch((err) => {
+        initializeUserData(session.user.id).catch((err) => {
           console.error('ユーザーデータ初期化エラー:', err);
         });
       }
@@ -169,9 +179,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
 
-      if (event === 'SIGNED_IN' && session) {
+      if (event === 'SIGNED_IN' && session?.user) {
         // ログイン時はユーザーデータを初期化
-        await initializeUserData();
+        await initializeUserData(session.user.id);
       }
       // SIGNED_OUTはsignOut関数内で処理するため、ここでは何もしない
     });
