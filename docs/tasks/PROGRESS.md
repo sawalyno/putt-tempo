@@ -11,7 +11,7 @@
 | フェーズ | タスク数 | 完了 | 進捗率 |
 |---------|---------|------|--------|
 | Phase 1: 基盤セットアップ | 4 | 4 | 100% |
-| Phase 2: Supabase DB・RPC | 3 | 0 | 0% |
+| Phase 2: Supabase DB・RPC | 3 | 3 | 100% |
 | Phase 3: 型定義・定数 | 2 | 0 | 0% |
 | Phase 4: メトロノームコア | 3 | 0 | 0% |
 | Phase 5: プリセット管理 | 2 | 0 | 0% |
@@ -20,7 +20,7 @@
 | Phase 8: 課金（RevenueCat） | 2 | 0 | 0% |
 | Phase 9: 広告（AdMob） | 1 | 0 | 0% |
 | Phase 10: リリース準備 | 4 | 0 | 0% |
-| **合計** | **28** | **4** | **14%** |
+| **合計** | **28** | **7** | **25%** |
 
 ---
 
@@ -37,9 +37,9 @@
 ### Phase 2: Supabase DB・RPC
 | ID | タスク名 | 状態 | 所要時間 | 依存 | 備考 |
 |----|---------|------|---------|------|------|
-| task05 | DBテーブル作成 | 🔴 未着手 | 1h | task01 | user_profiles, custom_presets, practice_sessions, subscriptions |
-| task06 | RPC関数作成（基本） | 🔴 未着手 | 1h | task05 | initialize_user, check_preset_limit |
-| task07 | RPC関数作成（記録・統計） | 🔴 未着手 | 1h | task05 | save_practice_session, get_practice_stats, upgrade_subscription |
+| task05 | DBテーブル作成 | 🟢 完了 | 1h | task01 | user_profiles, custom_presets, practice_sessions, subscriptions |
+| task06 | RPC関数作成（基本） | 🟢 完了 | 1h | task05 | initialize_user, check_preset_limit |
+| task07 | RPC関数作成（記録・統計） | 🟢 完了 | 1h | task05 | save_practice_session, get_practice_stats, upgrade_subscription |
 
 ### Phase 3: 型定義・定数
 | ID | タスク名 | 状態 | 所要時間 | 依存 | 備考 |

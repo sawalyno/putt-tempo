@@ -168,13 +168,13 @@ ON DELETE SET NULL;
 ```
 
 ## 完了条件
-- [ ] user_profiles テーブルが作成されている
-- [ ] custom_presets テーブルが作成されている
-- [ ] practice_sessions テーブルが作成されている
-- [ ] subscriptions テーブルが作成されている
-- [ ] 全テーブルにRLSポリシーが設定されている
-- [ ] インデックスが作成されている
-- [ ] Supabase Dashboardでテーブル構造を確認できる
+- [x] user_profiles テーブルが作成されている
+- [x] custom_presets テーブルが作成されている
+- [x] practice_sessions テーブルが作成されている
+- [x] subscriptions テーブルが作成されている
+- [x] 全テーブルにRLSポリシーが設定されている
+- [x] インデックスが作成されている
+- [x] Supabase Dashboardでテーブル構造を確認できる
 
 ## 注意事項
 - 匿名認証を有効にしておくこと（Supabase Dashboard > Authentication > Settings）

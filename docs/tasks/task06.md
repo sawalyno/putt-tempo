@@ -114,10 +114,10 @@ const { data, error } = await supabase.rpc('check_preset_limit', {
 ```
 
 ## 完了条件
-- [ ] initialize_user 関数が作成されている
-- [ ] check_preset_limit 関数が作成されている
-- [ ] Supabase Dashboard の SQL Editor から実行テストが通る
-- [ ] アプリから呼び出しできることを確認
+- [x] initialize_user 関数が作成されている
+- [x] check_preset_limit 関数が作成されている
+- [x] Supabase Dashboard の SQL Editor から実行テストが通る
+- [ ] アプリから呼び出しできることを確認（後続タスクで検証）
 
 ## 注意事項
 - `SECURITY DEFINER` を使用しているため、RLSをバイパスできる

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html class="dark" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Putt Tempo - プリセット作成</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2a73ea",
+                        "background-light": "#f5f5f5",
+                        "background-dark": "#050505",
+                        "surface-dark": "#161616",
+                        "surface-dark-light": "#222222",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "Noto Sans JP", "sans-serif"],
+                        "sans": ["Noto Sans JP", "Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #2a73ea;
+            cursor: pointer;
+            border: 3px solid #050505;
+            box-shadow: 0 0 10px rgba(42, 115, 234, 0.4);
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-white min-h-screen font-sans">
+<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-4 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+<span class="material-symbols-outlined text-white">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">プリセット作成</h1>
+</div>
+<button class="px-5 py-1.5 bg-primary text-white text-sm font-bold rounded-full shadow-lg shadow-primary/20">
+            保存
+        </button>
+</header>
+<main class="max-w-md mx-auto px-4 py-6 space-y-8 pb-48">
+<section class="space-y-3">
+<div class="flex justify-between items-end">
+<h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">プリセット名</h3>
+<span class="text-xs text-gray-500 font-medium">0/20文字</span>
+</div>
+<div class="relative group">
+<input class="w-full bg-surface-dark border-2 border-gray-800 focus:border-primary focus:ring-0 rounded-xl px-4 py-4 text-white placeholder:text-gray-600 transition-all" placeholder="例：高速グリーン用" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600">
+<span class="material-symbols-outlined">edit</span>
+</div>
+</div>
+</section>
+<section class="space-y-6">
+<div class="flex justify-between items-center">
+<h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">テンポ（BPM）</h3>
+<div class="bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+<span class="text-primary text-[10px] font-bold uppercase tracking-tighter">精度優先</span>
+</div>
+</div>
+<div class="bg-surface-dark rounded-2xl p-6 border border-gray-800">
+<div class="flex flex-col items-center mb-8">
+<span class="text-7xl font-extrabold tracking-tighter text-white tabular-nums">76</span>
+<span class="text-primary text-xs font-bold mt-1 tracking-widest">BPM</span>
+</div>
+<div class="relative flex items-center h-12">
+<div class="absolute w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 32%"></div>
+</div>
+<input class="absolute w-full appearance-none bg-transparent cursor-pointer z-10" max="200" min="30" type="range" value="76"/>
+<div class="w-full flex justify-between mt-10 px-1 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+<span>30</span>
+<span>115</span>
+<span>200</span>
+</div>
+</div>
+</div>
+</section>
+<section class="space-y-4">
+<h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">比率（バック : フォワード）</h3>
+<div class="grid grid-cols-1 gap-4">
+<div class="bg-surface-dark border border-gray-800 rounded-2xl p-5 flex items-center justify-between">
+<button class="w-14 h-14 flex items-center justify-center bg-surface-dark-light rounded-xl border border-gray-700 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-white">remove</span>
+</button>
+<div class="flex flex-col items-center">
+<div class="text-4xl font-bold tracking-tighter flex items-center gap-2">
+<span>2</span>
+<span class="text-primary">:</span>
+<span>1</span>
+</div>
+<span class="text-xs text-gray-500 font-medium mt-1">標準ストローク</span>
+</div>
+<button class="w-14 h-14 flex items-center justify-center bg-primary rounded-xl active:scale-95 transition-transform shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white">add</span>
+</button>
+</div>
+</div>
+</section>
+<section class="space-y-4">
+<h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">音の種類</h3>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-dark border border-gray-800 rounded-xl px-4 py-4 pr-12 text-white font-medium focus:ring-0 focus:border-primary cursor-pointer">
+<option>ウッドブロック</option>
+<option>デジタルビープ</option>
+<option>ゴルフボール打音</option>
+<option>パルス音</option>
+</select>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</section>
+<section class="bg-surface-dark border border-gray-800 rounded-xl px-4 py-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-yellow-500 text-xl fill-1">star</span>
+</div>
+<div>
+<p class="font-bold text-sm">⭐ お気に入りに追加</p>
+<p class="text-[10px] text-gray-500">ホーム画面から素早くアクセス</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</section>
+<section class="pt-4 pb-8 text-center">
+<button class="text-red-500 text-sm font-medium flex items-center justify-center gap-2 mx-auto py-2 px-4 hover:bg-red-500/10 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg">delete</span>
+                🗑️ このプリセットを削除
+            </button>
+</section>
+</main>
+<div class="fixed bottom-0 left-0 right-0 z-50">
+<div class="px-6 py-4 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-xl border-t border-gray-800">
+<div class="max-w-md mx-auto flex flex-col items-center gap-4">
+<div class="w-48 h-1 bg-gray-800 rounded-full relative overflow-hidden">
+<div class="absolute top-0 h-full w-4 bg-primary rounded-full blur-[2px]" style="left: 50%; transform: translateX(-50%)"></div>
+</div>
+<button class="w-full h-14 rounded-full border-2 border-primary flex items-center justify-center gap-3 group active:scale-95 transition-transform bg-primary/5 hover:bg-primary/10">
+<span class="text-primary font-bold text-lg tracking-wider">🎵 プレビュー再生</span>
+</button>
+</div>
+</div>
+<nav class="bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 px-6 pb-8 pt-2">
+<div class="max-w-md mx-auto flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
+<button class="flex flex-col items-center gap-1 w-16">
+<span class="material-symbols-outlined text-2xl">home</span>
+                    ホーム
+                </button>
+<button class="flex flex-col items-center gap-1 w-16 text-primary">
+<span class="material-symbols-outlined text-2xl fill-1">timer</span>
+                    プリセット
+                </button>
+<button class="flex flex-col items-center gap-1 w-16">
+<span class="material-symbols-outlined text-2xl">bar_chart</span>
+                    統計
+                </button>
+<button class="flex flex-col items-center gap-1 w-16">
+<span class="material-symbols-outlined text-2xl">settings</span>
+                    設定
+                </button>
+</div>
+</nav>
+</div>
+
+</body></html>

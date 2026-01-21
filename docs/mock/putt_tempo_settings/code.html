@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html class="dark" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2a73ea",
+                        "background-light": "#f5f5f5",
+                        "background-dark": "#050505",
+                        "surface-dark": "#121212",
+                        "premium": "#F59E0B",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .custom-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked+.slider {
+            background-color: #2a73ea;
+        }
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 min-h-screen">
+<div class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="flex items-center px-4 py-4 justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-size: 28px;">sports_golf</span>
+<h2 class="text-xl font-bold tracking-tight">Putt Tempo</h2>
+</div>
+</div>
+</div>
+<div class="max-w-md mx-auto pb-32">
+<div class="px-4 pt-4 pb-2">
+<h1 class="text-3xl font-extrabold tracking-tight">設定</h1>
+</div>
+<div class="mt-6">
+<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 px-4 mb-2">アカウント</h3>
+<div class="mx-4 overflow-hidden rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/5">
+<div class="flex items-center gap-4 px-4 py-4 justify-between">
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+<div class="flex flex-col">
+<p class="text-base font-bold leading-none">👤 ゲストユーザー</p>
+<p class="text-gray-500 text-xs mt-1">データは同期されていません</p>
+</div>
+</div>
+<button class="text-primary text-sm font-bold px-2 py-2">
+                        アカウントを作成 →
+                    </button>
+</div>
+</div>
+</div>
+<div class="mt-8">
+<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 px-4 mb-2">プラン</h3>
+<div class="mx-4 overflow-hidden rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/5">
+<div class="flex items-center gap-4 px-4 py-4 justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-gray-400">workspace_premium</span>
+<p class="text-base font-medium">無料プラン</p>
+</div>
+<button class="text-premium text-sm font-bold flex items-center gap-1">
+                        プレミアムにアップグレード →
+                    </button>
+</div>
+</div>
+</div>
+<div class="mt-8">
+<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 px-4 mb-2">アプリについて</h3>
+<div class="mx-4 overflow-hidden rounded-xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/5 divide-y divide-gray-200 dark:divide-white/5">
+<div class="flex items-center gap-4 px-4 py-4 justify-between">
+<p class="text-base font-medium">バージョン</p>
+<p class="text-gray-500 text-sm">v1.2.0 (88)</p>
+</div>
+<a class="flex items-center gap-4 px-4 py-4 justify-between active:bg-gray-100 dark:active:bg-white/5" href="#">
+<p class="text-base font-medium">利用規約</p>
+<span class="material-symbols-outlined text-gray-500 text-sm">open_in_new</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-4 justify-between active:bg-gray-100 dark:active:bg-white/5" href="#">
+<p class="text-base font-medium">プライバシーポリシー</p>
+<span class="material-symbols-outlined text-gray-500 text-sm">open_in_new</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-4 justify-between active:bg-gray-100 dark:active:bg-white/5" href="#">
+<p class="text-base font-medium">お問い合わせ</p>
+<span class="material-symbols-outlined text-gray-500 text-sm">mail</span>
+</a>
+</div>
+</div>
+<div class="mt-12 flex justify-center">
+<button class="text-gray-500 dark:text-gray-400 text-sm font-medium border-b border-gray-500/30 pb-0.5 active:opacity-60">
+                🔄 購入を復元
+            </button>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 pb-6 pt-2">
+<div class="max-w-md mx-auto flex justify-around items-center">
+<button class="flex flex-col items-center gap-1 text-gray-500">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">ホーム</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-500">
+<span class="material-symbols-outlined">timer</span>
+<span class="text-[10px] font-medium">プリセット</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-500">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-medium">統計</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-[10px] font-bold">設定</span>
+</button>
+</div>
+</div>
+</body></html>

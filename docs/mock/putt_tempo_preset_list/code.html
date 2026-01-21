@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html class="dark" lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>プリセット一覧（ヘッダー＋削除版）</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2a73ea",
+                        "background-light": "#f5f5f5",
+                        "background-dark": "#050505",
+                        "surface-dark": "#161616",
+                        "surface-lighter": "#242424",
+                        "accent-gold": "#F59E0B"
+                    },
+                    fontFamily: {
+                        "display": ["Noto Sans JP", "Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+        }
+        .filled-icon {
+            font-variation-settings: "FILL" 1
+        }
+        .dashed-border {
+            border: 2px dashed #334155;
+            border-radius: 12px;
+        }
+        .dark .dashed-border {
+            border-color: #334155;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white min-h-screen">
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 py-4 border-b border-white/5">
+<div class="flex items-center justify-between max-w-md mx-auto">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">プリセット</h1>
+</div>
+</header>
+<main class="max-w-md mx-auto px-4 pb-32">
+<section class="mt-6">
+<div class="flex items-center justify-between mb-3 px-1">
+<h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">デフォルト</h2>
+</div>
+<div class="space-y-3">
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center justify-between border border-transparent dark:border-white/5 active:scale-95 transition-transform cursor-pointer shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-accent-gold/10 text-accent-gold p-3 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined filled-icon">star</span>
+</div>
+<div>
+<p class="font-bold text-slate-900 dark:text-white text-lg">スタンダード</p>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">76 BPM <span class="mx-1 opacity-30">|</span> 2:1 比率</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center justify-between border border-transparent dark:border-white/5 active:scale-95 transition-transform cursor-pointer shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-slate-100 dark:bg-surface-lighter text-slate-400 p-3 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">adjust</span>
+</div>
+<div>
+<p class="font-bold text-slate-900 dark:text-white text-lg">ゆっくり</p>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">72 BPM <span class="mx-1 opacity-30">|</span> 2.1:1 比率</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center justify-between border border-transparent dark:border-white/5 active:scale-95 transition-transform cursor-pointer shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-slate-100 dark:bg-surface-lighter text-slate-400 p-3 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<div>
+<p class="font-bold text-slate-900 dark:text-white text-lg">速め</p>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">82 BPM <span class="mx-1 opacity-30">|</span> 2:1 比率</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center justify-between border border-transparent dark:border-white/5 active:scale-95 transition-transform cursor-pointer shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-slate-100 dark:bg-surface-lighter text-slate-400 p-3 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">equalizer</span>
+</div>
+<div>
+<p class="font-bold text-slate-900 dark:text-white text-lg">均等リズム</p>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">76 BPM <span class="mx-1 opacity-30">|</span> 1:1 比率</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+</div>
+</section>
+<section class="mt-8">
+<div class="flex items-center justify-between mb-3 px-1">
+<div class="flex items-center gap-3">
+<h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">カスタム</h2>
+<span class="bg-accent-gold text-background-dark text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] filled-icon">lock</span> 🔓 無料
+                </span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center justify-between border border-transparent dark:border-white/5 group shadow-sm">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">routine</span>
+</div>
+<div>
+<p class="font-bold text-slate-900 dark:text-white text-lg">朝練用</p>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">78 BPM <span class="mx-1 opacity-30">|</span> 2:1 比率</p>
+</div>
+</div>
+<button class="bg-slate-100 dark:bg-surface-lighter text-slate-600 dark:text-slate-300 hover:text-primary px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+                    編集
+                </button>
+</div>
+<div class="dashed-border min-h-[80px] flex items-center justify-center group cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-2 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-semibold">＋ 新しいプリセットを作成</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-surface-dark/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 pb-6 pt-3 px-6 z-50">
+<div class="max-w-md mx-auto flex items-center justify-between">
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-bold">ホーム</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined filled-icon">format_list_bulleted</span>
+<span class="text-[10px] font-bold">プリセット</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold">統計</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold">設定</span>
+</div>
+</div>
+</nav>
+
+</body></html>

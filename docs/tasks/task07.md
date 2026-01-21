@@ -186,10 +186,11 @@ $$;
 ```
 
 ## 完了条件
-- [ ] save_practice_session 関数が作成されている
-- [ ] get_practice_stats 関数が作成されている
-- [ ] upgrade_subscription 関数が作成されている
-- [ ] 各関数のテストが通る
+- [x] save_practice_session 関数が作成されている
+- [x] get_practice_stats 関数が作成されている
+- [x] upgrade_subscription 関数が作成されている
+- [x] 各関数のテストが通る
+- [x] セキュリティ警告（search_path）を解消
 
 ## 注意事項
 - 統計取得はプランに応じて期間が異なる（無料: 7日、プレミアム: 1年）
