@@ -46,7 +46,8 @@ class SoundPlayer {
 
     const file = SOUND_FILES[soundType];
     if (!file) {
-      console.warn(`Sound file not found for: ${soundType}`);
+      // 音声ファイルが未配置の場合は静かに無視（開発中）
+      // console.warn(`Sound file not found for: ${soundType}`);
       return;
     }
 
