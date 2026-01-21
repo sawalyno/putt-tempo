@@ -10,7 +10,6 @@ import Animated, {
   withSequence,
   Easing,
   cancelAnimation,
-  runOnJS,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -23,18 +22,16 @@ interface PendulumProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PENDULUM_HEIGHT = 180;
-const MAX_ANGLE = 25; // degrees
+const PENDULUM_HEIGHT = 160;
+const MAX_ANGLE = 20; // degrees
 
 export function Pendulum({
   isPlaying,
-  currentPhase,
   bpm,
   backRatio,
   forwardRatio,
 }: PendulumProps) {
   const rotation = useSharedValue(0);
-  const bobGlow = useSharedValue(0.4);
 
   useEffect(() => {
     if (isPlaying && bpm > 0) {
@@ -66,30 +63,14 @@ export function Pendulum({
         -1,
         false
       );
-
-      // グロー効果のアニメーション
-      bobGlow.value = withRepeat(
-        withSequence(
-          withTiming(0.6, { duration: beatMs / 2 }),
-          withTiming(0.4, { duration: beatMs / 2 })
-        ),
-        -1,
-        false
-      );
     } else {
       cancelAnimation(rotation);
-      cancelAnimation(bobGlow);
       rotation.value = withTiming(0, { duration: 300 });
-      bobGlow.value = 0.4;
     }
   }, [isPlaying, bpm, backRatio, forwardRatio]);
 
   const pendulumAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  const bobGlowStyle = useAnimatedStyle(() => ({
-    shadowOpacity: bobGlow.value,
   }));
 
   return (
@@ -106,12 +87,7 @@ export function Pendulum({
         />
 
         {/* ボブ（先端の重り） */}
-        <Animated.View style={[styles.bob, bobGlowStyle]}>
-          <LinearGradient
-            colors={['#2a73ea', '#1d4ed8']}
-            style={styles.bobInner}
-          />
-        </Animated.View>
+        <View style={styles.bob} />
       </Animated.View>
 
       {/* 弧（破線） */}
@@ -124,8 +100,8 @@ export function Pendulum({
 
 const styles = StyleSheet.create({
   container: {
-    width: SCREEN_WIDTH * 0.8,
-    height: 260,
+    width: Math.min(SCREEN_WIDTH * 0.8, 300),
+    height: 220,
     alignItems: 'center',
     position: 'relative',
   },
@@ -150,34 +126,31 @@ const styles = StyleSheet.create({
   bob: {
     width: 48,
     height: 24,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+    backgroundColor: '#2a73ea',
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
-    overflow: 'hidden',
     shadowColor: '#2a73ea',
     shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
-  },
-  bobInner: {
-    width: '100%',
-    height: '100%',
   },
   arcContainer: {
     position: 'absolute',
     bottom: 16,
     width: '80%',
-    height: 80,
+    height: 60,
     overflow: 'hidden',
   },
   arc: {
     width: '100%',
-    height: 160,
+    height: 120,
     borderWidth: 2,
     borderColor: '#2d343d',
     borderStyle: 'dashed',
-    borderRadius: 160,
+    borderRadius: 120,
     borderTopWidth: 0,
     borderLeftWidth: 0,
     borderRightWidth: 0,
