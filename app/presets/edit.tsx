@@ -247,7 +247,7 @@ export default function PresetEditScreen() {
           <View style={styles.soundPickerContainer}>
             <Pressable style={styles.soundPicker}>
               <Text style={styles.soundPickerText}>
-                {SOUND_DEFINITIONS.find(s => s.type === soundType)?.name || 'クリック音'}
+                {SOUND_DEFINITIONS.find(s => s.id === soundType)?.name || 'クリック音'}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#9ca3af" />
             </Pressable>
@@ -255,16 +255,16 @@ export default function PresetEditScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.soundList}>
             {availableSounds.map((sound) => (
               <Pressable
-                key={sound.type}
+                key={sound.id}
                 style={[
                   styles.soundChip,
-                  soundType === sound.type && styles.soundChipSelected,
+                  soundType === sound.id && styles.soundChipSelected,
                 ]}
-                onPress={() => setSoundType(sound.type)}
+                onPress={() => setSoundType(sound.id)}
               >
                 <Text style={[
                   styles.soundChipText,
-                  soundType === sound.type && styles.soundChipTextSelected,
+                  soundType === sound.id && styles.soundChipTextSelected,
                 ]}>
                   {sound.name}
                 </Text>
