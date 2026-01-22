@@ -11,10 +11,9 @@ import {
   Alert,
   Switch,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import Slider from '@react-native-community/slider';
 
 import { useCustomPresets } from '@/hooks/usePresets';
@@ -25,6 +24,7 @@ import { SoundType } from '@/types';
 import { APP_CONFIG, SOUND_DEFINITIONS, getAvailableSounds } from '@/constants';
 
 export default function PresetEditScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEditing = !!id;
 
@@ -139,19 +139,17 @@ export default function PresetEditScreen() {
   return (
     <View style={styles.container}>
       {/* ヘッダー */}
-      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
-        <BlurView intensity={80} style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerButton}>
-            <Ionicons name="chevron-back" size={24} color="#ffffff" />
-          </Pressable>
-          <Text style={styles.headerTitle}>
-            {isEditing ? 'プリセット編集' : 'プリセット作成'}
-          </Text>
-          <Pressable onPress={handleSave} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>保存</Text>
-          </Pressable>
-        </BlurView>
-      </SafeAreaView>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={() => router.back()} style={styles.headerButton}>
+          <Ionicons name="chevron-back" size={24} color="#ffffff" />
+        </Pressable>
+        <Text style={styles.headerTitle}>
+          {isEditing ? 'プリセット編集' : 'プリセット作成'}
+        </Text>
+        <Pressable onPress={handleSave} style={styles.saveButton}>
+          <Text style={styles.saveButtonText}>保存</Text>
+        </Pressable>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -304,7 +302,7 @@ export default function PresetEditScreen() {
       </ScrollView>
 
       {/* フッター - プレビュー */}
-      <SafeAreaView edges={['bottom']} style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <View style={styles.footerContent}>
           <View style={styles.miniPendulum}>
             <View style={styles.miniPendulumIndicator} />
@@ -313,7 +311,7 @@ export default function PresetEditScreen() {
             <Text style={styles.previewButtonText}>🎵 プレビュー再生</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -323,19 +321,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050505',
   },
-  headerSafeArea: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingBottom: 16,
+    backgroundColor: '#050505',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
@@ -364,7 +356,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
+    paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 200,
   },
@@ -636,9 +628,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(5, 5, 5, 0.9)',
+    backgroundColor: '#050505',
     borderTopWidth: 1,
-    borderTopColor: '#374151',
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
   footerContent: {
     paddingHorizontal: 24,

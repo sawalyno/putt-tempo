@@ -145,7 +145,6 @@ export default function StatsScreen() {
                   {avgMinutes} 分
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
             </View>
             <View style={styles.detailDivider} />
             <View style={styles.detailItem}>
@@ -158,7 +157,6 @@ export default function StatsScreen() {
                   {stats?.most_used_preset || 'まだ記録がありません'}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
             </View>
           </View>
         </View>

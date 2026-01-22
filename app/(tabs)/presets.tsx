@@ -132,7 +132,7 @@ export default function PresetsScreen() {
   );
 }
 
-// デフォルトプリセットカード
+// デフォルトプリセットカード（編集不可）
 function PresetCard({
   preset,
   isFavorite,
@@ -143,7 +143,7 @@ function PresetCard({
   iconName: keyof typeof Ionicons.glyphMap;
 }) {
   return (
-    <Pressable style={styles.presetCard}>
+    <View style={styles.presetCard}>
       <View style={styles.presetCardContent}>
         <View style={[
           styles.presetIcon,
@@ -162,8 +162,7 @@ function PresetCard({
           </Text>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#64748b" />
-    </Pressable>
+    </View>
   );
 }
 

@@ -1,10 +1,11 @@
 // constants/animations.ts
-import { Easing } from 'react-native-reanimated';
+// Note: Easing関数は使用箇所で直接 react-native-reanimated からインポートしてください
+// モジュールトップレベルでEasingを使用するとReanimated初期化前にエラーが発生します
 
 // ボタン押下アニメーション設定
 export const buttonPressConfig = {
-  pressIn: { scale: 0.95, duration: 50, easing: Easing.inOut(Easing.ease) },
-  pressOut: { scale: 1, duration: 100, easing: Easing.inOut(Easing.ease) },
+  pressIn: { scale: 0.95, duration: 50 },
+  pressOut: { scale: 1, duration: 100 },
 } as const;
 
 // モーダル表示アニメーション設定
@@ -17,11 +18,9 @@ export const modalAnimationConfig = {
 // フェードアニメーション設定
 export const fadeConfig = {
   duration: 300,
-  easing: Easing.inOut(Easing.ease),
 } as const;
 
 // スライドアニメーション設定
 export const slideConfig = {
   duration: 400,
-  easing: Easing.out(Easing.cubic),
 } as const;

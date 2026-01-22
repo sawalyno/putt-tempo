@@ -8,6 +8,7 @@ import Constants from 'expo-constants';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremiumStatus, usePurchase } from '@/hooks/usePurchase';
+import { supabase } from '@/lib/supabase';
 
 export default function SettingsScreen() {
   const { user, isAnonymous } = useAuth();
@@ -30,6 +31,27 @@ export default function SettingsScreen() {
   const handleCreateAccount = () => {
     // TODO: アカウント作成フローへ
     Alert.alert('準備中', 'アカウント作成機能は準備中です');
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'ログアウト',
+      'ログアウトしますか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: 'ログアウト',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await supabase.auth.signOut();
+            } catch (error) {
+              Alert.alert('エラー', 'ログアウトに失敗しました');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const openLink = (url: string) => {
@@ -76,9 +98,13 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               </View>
-              {isAnonymous && (
+              {isAnonymous ? (
                 <Pressable onPress={handleCreateAccount}>
                   <Text style={styles.accountAction}>アカウントを作成 →</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={handleLogout} style={styles.logoutButton}>
+                  <Text style={styles.logoutButtonText}>ログアウト</Text>
                 </Pressable>
               )}
             </View>
@@ -258,6 +284,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Manrope_700Bold',
     color: '#2a73ea',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  logoutButtonText: {
+    fontSize: 14,
+    fontFamily: 'Manrope_700Bold',
+    color: '#ef4444',
   },
   menuItem: {
     flexDirection: 'row',
