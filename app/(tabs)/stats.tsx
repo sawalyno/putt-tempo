@@ -1,5 +1,6 @@
 // app/(tabs)/stats.tsx - 統計画面（mockデザイン準拠）
 
+import { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,37 +11,50 @@ import { usePremiumStatus } from '@/hooks/usePurchase';
 
 // 曜日名
 const DAY_NAMES = ['月', '火', '水', '木', '金', '土', '日'];
-const DAY_COLORS = ['#fff', '#fff', '#fff', '#fff', '#fff', '#2a73ea', '#ef4444'];
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
   const { isPremium } = usePremiumStatus();
-  const { data: stats } = usePracticeStats();
-
-  // モックデータ（実際のデータがない場合）
-  const weeklyData = stats?.daily_stats || [
-    { day: '月', minutes: 8 },
-    { day: '火', minutes: 14 },
-    { day: '水', minutes: 5 },
-    { day: '木', minutes: 6 },
-    { day: '金', minutes: 2 },
-    { day: '土', minutes: 12 },
-    { day: '日', minutes: 10 },
-  ];
-
-  const totalMinutes = stats?.total_practice_time_seconds 
-    ? Math.round(stats.total_practice_time_seconds / 60) 
-    : 45;
-  const sessionCount = stats?.session_count || 5;
-  const maxMinutes = Math.max(...weeklyData.map((d: any) => d.minutes || 0), 1);
+  const { data: stats, isLoading } = usePracticeStats();
 
   // 日付範囲を計算
   const today = new Date();
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay() + 1);
+  weekStart.setDate(today.getDate() - today.getDay() + 1); // 月曜日
   const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setDate(weekStart.getDate() + 6); // 日曜日
   const dateRange = `${weekStart.getMonth() + 1}月${weekStart.getDate()}日 - ${weekEnd.getMonth() + 1}月${weekEnd.getDate()}日`;
+
+  // RPCの daily_stats を週間データに変換
+  const weeklyData = useMemo(() => {
+    // 過去7日間のデータを曜日ごとに集計
+    const dayData: { day: string; minutes: number }[] = DAY_NAMES.map((day) => ({
+      day,
+      minutes: 0,
+    }));
+
+    if (stats?.daily_stats && Array.isArray(stats.daily_stats)) {
+      stats.daily_stats.forEach((stat: { date: string; duration_seconds: number }) => {
+        const date = new Date(stat.date);
+        const dayOfWeek = date.getDay(); // 0=日曜, 1=月曜...
+        // 月曜を0、日曜を6に変換
+        const index = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        dayData[index].minutes += Math.round(stat.duration_seconds / 60);
+      });
+    }
+
+    return dayData;
+  }, [stats?.daily_stats]);
+
+  // 統計値
+  const totalMinutes = stats?.total_duration_seconds
+    ? Math.round(stats.total_duration_seconds / 60)
+    : 0;
+  const sessionCount = stats?.total_sessions || 0;
+  const avgMinutes = stats?.average_duration_seconds
+    ? (stats.average_duration_seconds / 60).toFixed(1)
+    : '0';
+  const maxMinutes = Math.max(...weeklyData.map((d) => d.minutes), 1);
 
   return (
     <View style={styles.container}>
@@ -68,12 +82,12 @@ export default function StatsScreen() {
             <View style={styles.summaryDivider} />
             <View style={styles.summaryStats}>
               <View style={styles.summaryStat}>
-                <Text style={styles.summaryStatLabel}>{sessionCount}セッション</Text>
-                <Text style={styles.summaryStatValue}>継続中</Text>
+                <Text style={styles.summaryStatLabel}>セッション数</Text>
+                <Text style={styles.summaryStatValue}>{sessionCount}</Text>
               </View>
               <View style={[styles.summaryStat, styles.summaryStatRight]}>
-                <Text style={styles.summaryStatLabel}>効率</Text>
-                <Text style={[styles.summaryStatValue, styles.summaryStatValuePrimary]}>+12%</Text>
+                <Text style={styles.summaryStatLabel}>平均/回</Text>
+                <Text style={[styles.summaryStatValue, styles.summaryStatValuePrimary]}>{avgMinutes}分</Text>
               </View>
             </View>
           </View>
@@ -128,7 +142,7 @@ export default function StatsScreen() {
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>平均セッション時間</Text>
                 <Text style={styles.detailValue}>
-                  {sessionCount > 0 ? (totalMinutes / sessionCount).toFixed(1) : 0} 分
+                  {avgMinutes} 分
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
@@ -141,7 +155,7 @@ export default function StatsScreen() {
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>よく使うプリセット</Text>
                 <Text style={styles.detailValue} numberOfLines={1}>
-                  {stats?.most_used_preset || '2.1s テンポ (75 BPM)'}
+                  {stats?.most_used_preset || 'まだ記録がありません'}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
