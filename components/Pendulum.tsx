@@ -1,15 +1,15 @@
 // components/Pendulum.tsx - 振り子アニメーション（バック/フォワードを視覚的に明示）
 
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSequence,
+  withRepeat,
   Easing,
   cancelAnimation,
-  runOnJS,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -22,8 +22,8 @@ interface PendulumProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PENDULUM_HEIGHT = 140;
-const MAX_ANGLE = 18; // degrees
+const PENDULUM_HEIGHT = 120;
+const MAX_ANGLE = 25; // degrees
 
 export function Pendulum({
   isPlaying,
@@ -40,7 +40,7 @@ export function Pendulum({
   useEffect(() => {
     if (!isPlaying) {
       cancelAnimation(rotation);
-      rotation.value = withTiming(0, { duration: 200 });
+      rotation.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.quad) });
       bobGlow.value = withTiming(0, { duration: 200 });
       impactFlash.value = 0;
       return;
@@ -52,29 +52,23 @@ export function Pendulum({
     const forwardMs = (forwardRatio / totalRatio) * cycleDuration;
 
     if (currentPhase === 'back') {
-      // バックスイング: 中央から右へ
+      // バックスイング: 中央から右へ（ゆっくり）
       rotation.value = withTiming(MAX_ANGLE, {
-        duration: backMs,
-        easing: Easing.out(Easing.quad),
+        duration: backMs * 0.95, // 少し余裕を持たせる
+        easing: Easing.inOut(Easing.sine),
       });
-      bobGlow.value = withTiming(0.3, { duration: 100 });
+      bobGlow.value = withTiming(0.2, { duration: backMs * 0.5 });
       impactFlash.value = 0;
     } else if (currentPhase === 'forward') {
-      // フォワード: 右から左へ（インパクト）
-      rotation.value = withSequence(
-        withTiming(-MAX_ANGLE * 0.5, {
-          duration: forwardMs * 0.6,
-          easing: Easing.in(Easing.quad),
-        }),
-        withTiming(0, {
-          duration: forwardMs * 0.4,
-          easing: Easing.out(Easing.quad),
-        })
-      );
+      // フォワード: 右から中央へ戻る（インパクト）
+      rotation.value = withTiming(0, {
+        duration: forwardMs * 0.95,
+        easing: Easing.in(Easing.quad),
+      });
       // インパクトフラッシュ
       bobGlow.value = withSequence(
         withTiming(1, { duration: 50 }),
-        withTiming(0.3, { duration: 150 })
+        withTiming(0.3, { duration: forwardMs - 50 })
       );
       impactFlash.value = withSequence(
         withTiming(1, { duration: 30 }),
@@ -83,9 +77,24 @@ export function Pendulum({
     }
   }, [isPlaying, currentPhase, bpm, backRatio, forwardRatio]);
 
-  const pendulumAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
+  // transformOriginを実現するためにtranslateを組み合わせる
+  const pendulumAnimatedStyle = useAnimatedStyle(() => {
+    const angle = rotation.value;
+    // ピボットを上部中央にするための計算
+    // 回転前に上に移動、回転、回転後に下に戻す
+    const pivotY = PENDULUM_HEIGHT / 2;
+    const rad = (angle * Math.PI) / 180;
+    const offsetX = Math.sin(rad) * pivotY;
+    const offsetY = (1 - Math.cos(rad)) * pivotY;
+    
+    return {
+      transform: [
+        { translateX: offsetX },
+        { translateY: offsetY },
+        { rotate: `${angle}deg` },
+      ],
+    };
+  });
 
   const bobAnimatedStyle = useAnimatedStyle(() => ({
     shadowOpacity: 0.4 + bobGlow.value * 0.6,
@@ -151,8 +160,8 @@ export function Pendulum({
 
 const styles = StyleSheet.create({
   container: {
-    width: Math.min(SCREEN_WIDTH * 0.8, 300),
-    height: 220,
+    width: Math.min(SCREEN_WIDTH * 0.8, 280),
+    height: 200,
     alignItems: 'center',
     position: 'relative',
   },
@@ -162,72 +171,80 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(42, 115, 234, 0.1)',
+    backgroundColor: 'rgba(42, 115, 234, 0.15)',
     borderRadius: 20,
   },
   phaseIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 8,
+    gap: 20,
+    marginBottom: 12,
   },
   phaseItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   phaseItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   phaseItemForward: {
-    backgroundColor: 'rgba(42, 115, 234, 0.3)',
+    backgroundColor: 'rgba(42, 115, 234, 0.2)',
+    borderColor: '#2a73ea',
   },
   phaseDivider: {
     width: 1,
-    height: 16,
+    height: 20,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   phaseText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Manrope_700Bold',
     color: 'rgba(255,255,255,0.3)',
     letterSpacing: 2,
   },
   phaseTextActive: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.9)',
   },
   phaseTextForward: {
     color: '#2a73ea',
   },
   pivot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#ffffff',
-    marginTop: 8,
+    marginTop: 4,
     zIndex: 10,
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   pendulumContainer: {
     alignItems: 'center',
-    transformOrigin: 'top center',
     height: PENDULUM_HEIGHT,
   },
   rod: {
-    width: 4,
-    height: PENDULUM_HEIGHT - 24,
-    borderRadius: 2,
+    width: 3,
+    height: PENDULUM_HEIGHT - 28,
+    borderRadius: 1.5,
   },
   bob: {
-    width: 48,
-    height: 24,
+    width: 44,
+    height: 22,
     backgroundColor: '#2a73ea',
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: 11,
+    borderBottomRightRadius: 11,
     shadowColor: '#2a73ea',
-    shadowOffset: { width: 0, height: 0 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
@@ -236,24 +253,24 @@ const styles = StyleSheet.create({
   },
   bobInner: {
     width: 8,
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 2,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 1.5,
   },
   arcContainer: {
     position: 'absolute',
-    bottom: 16,
-    width: '80%',
-    height: 60,
+    bottom: 8,
+    width: '70%',
+    height: 50,
     overflow: 'hidden',
   },
   arc: {
     width: '100%',
-    height: 120,
-    borderWidth: 2,
-    borderColor: '#2d343d',
+    height: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(45, 52, 61, 0.6)',
     borderStyle: 'dashed',
-    borderRadius: 120,
+    borderRadius: 100,
     borderTopWidth: 0,
     borderLeftWidth: 0,
     borderRightWidth: 0,
