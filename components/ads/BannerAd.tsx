@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import Constants from 'expo-constants';
 
@@ -14,6 +14,7 @@ const isExpoGo = Constants.appOwnership === 'expo';
 let GoogleBannerAd: any = null;
 let BannerAdSize: any = null;
 let TestIds: any = { BANNER: 'test-banner-id' };
+let adsAvailable = false;
 
 if (!isExpoGo) {
   try {
@@ -21,6 +22,7 @@ if (!isExpoGo) {
     GoogleBannerAd = ads.BannerAd;
     BannerAdSize = ads.BannerAdSize;
     TestIds = ads.TestIds;
+    adsAvailable = true;
   } catch (e) {
     console.log('Google Mobile Ads not available');
   }
@@ -75,10 +77,18 @@ function MockBannerAd({ onAdLoaded }: BannerAdProps) {
  * 
  * - Expo Go: モック表示（レイアウト確認用）
  * - Development Build / Production Build: 実際の広告表示
+ * - 広告SDKが利用不可: モック表示にフォールバック
  */
 export function BannerAd({ onAdLoaded, onAdFailedToLoad }: BannerAdProps) {
-  // Expo Goの場合はモックUIを表示
-  if (isExpoGo) {
+  const [adLoadFailed, setAdLoadFailed] = useState(false);
+
+  // Expo GoまたはSDKが利用不可の場合はモックUIを表示
+  if (isExpoGo || !adsAvailable || !GoogleBannerAd) {
+    return <MockBannerAd onAdLoaded={onAdLoaded} />;
+  }
+
+  // 広告ロード失敗時はモック表示
+  if (adLoadFailed) {
     return <MockBannerAd onAdLoaded={onAdLoaded} />;
   }
 
@@ -96,8 +106,9 @@ export function BannerAd({ onAdLoaded, onAdFailedToLoad }: BannerAdProps) {
           console.log('Banner ad loaded');
           onAdLoaded?.();
         }}
-        onAdFailedToLoad={(error) => {
+        onAdFailedToLoad={(error: Error) => {
           console.error('Banner ad failed to load:', error);
+          setAdLoadFailed(true);
           onAdFailedToLoad?.(error);
         }}
       />
