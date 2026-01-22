@@ -1,14 +1,7 @@
-// components/Pendulum.tsx - 水平スライダー型アニメーション（バック/インパクトを視覚化）
+// components/Pendulum.tsx - 水平スライダー型アニメーション（React Native Animated API使用）
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  cancelAnimation,
-} from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 
 interface PendulumProps {
   isPlaying: boolean;
@@ -30,19 +23,27 @@ export function Pendulum({
   backRatio,
   forwardRatio,
 }: PendulumProps) {
-  const position = useSharedValue(0);
-  const indicatorScale = useSharedValue(1);
-  const indicatorGlow = useSharedValue(0);
-  const impactFlash = useSharedValue(0);
+  const position = useRef(new Animated.Value(0)).current;
+  const indicatorScale = useRef(new Animated.Value(1)).current;
+  const impactFlash = useRef(new Animated.Value(0)).current;
 
   // currentPhaseに基づいてアニメーション
   useEffect(() => {
     // 再生停止時
     if (!isPlaying) {
-      position.value = withTiming(0, { duration: 300 });
-      indicatorScale.value = withTiming(1, { duration: 200 });
-      indicatorGlow.value = 0;
-      impactFlash.value = 0;
+      Animated.parallel([
+        Animated.timing(position, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(indicatorScale, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      impactFlash.setValue(0);
       return;
     }
 
@@ -53,41 +54,62 @@ export function Pendulum({
 
     if (currentPhase === 'back') {
       // バックスイング: 中央から右へ移動
-      position.value = withTiming(MAX_OFFSET, { duration: backMs * 0.9 });
-      indicatorScale.value = withTiming(0.85, { duration: backMs * 0.5 });
-      indicatorGlow.value = 0.3;
-      impactFlash.value = 0;
+      Animated.parallel([
+        Animated.timing(position, {
+          toValue: MAX_OFFSET,
+          duration: backMs * 0.9,
+          useNativeDriver: true,
+        }),
+        Animated.timing(indicatorScale, {
+          toValue: 0.85,
+          duration: backMs * 0.5,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      impactFlash.setValue(0);
     } else if (currentPhase === 'forward') {
       // フォワード: 右から中央へ戻る（インパクト）
-      position.value = withTiming(0, { duration: forwardMs * 0.9 });
-      indicatorScale.value = withTiming(1.2, { duration: forwardMs * 0.3 });
-      indicatorGlow.value = 1;
-      impactFlash.value = withSequence(
-        withTiming(1, { duration: 50 }),
-        withTiming(0, { duration: 200 })
-      );
+      Animated.parallel([
+        Animated.timing(position, {
+          toValue: 0,
+          duration: forwardMs * 0.9,
+          useNativeDriver: true,
+        }),
+        Animated.timing(indicatorScale, {
+          toValue: 1.2,
+          duration: forwardMs * 0.3,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(impactFlash, {
+            toValue: 1,
+            duration: 50,
+            useNativeDriver: true,
+          }),
+          Animated.timing(impactFlash, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
     }
   }, [isPlaying, currentPhase, bpm, backRatio, forwardRatio]);
-
-  // インジケーターのアニメーションスタイル
-  const indicatorAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: position.value },
-      { scale: indicatorScale.value },
-    ],
-    shadowOpacity: 0.4 + indicatorGlow.value * 0.6,
-    shadowRadius: 8 + indicatorGlow.value * 12,
-  }));
-
-  // インパクトフラッシュスタイル
-  const impactFlashStyle = useAnimatedStyle(() => ({
-    opacity: impactFlash.value * 0.3,
-  }));
 
   return (
     <View style={styles.container}>
       {/* インパクトフラッシュ */}
-      <Animated.View style={[styles.impactFlash, impactFlashStyle]} />
+      <Animated.View
+        style={[
+          styles.impactFlash,
+          {
+            opacity: impactFlash.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.3],
+            }),
+          },
+        ]}
+      />
 
       {/* フェーズインジケーター */}
       <View style={styles.phaseIndicator}>
@@ -124,7 +146,17 @@ export function Pendulum({
         </View>
 
         {/* 移動するインジケーター */}
-        <Animated.View style={[styles.indicator, indicatorAnimatedStyle]}>
+        <Animated.View
+          style={[
+            styles.indicator,
+            {
+              transform: [
+                { translateX: position },
+                { scale: indicatorScale },
+              ],
+            },
+          ]}
+        >
           <View style={styles.indicatorInner} />
         </Animated.View>
       </View>
@@ -234,8 +266,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#2a73ea',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
     elevation: 8,
   },
   indicatorInner: {

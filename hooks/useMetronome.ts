@@ -24,6 +24,7 @@ export function useMetronome(options: UseMetronomeOptions) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const isPlayingRef = useRef(false);
+  const isBackRef = useRef(true); // フェーズ追跡用ref
 
   // タイミング計算
   const calculateTimings = useCallback(() => {
@@ -60,19 +61,18 @@ export function useMetronome(options: UseMetronomeOptions) {
   // メトロノームのメインループ
   const runMetronome = useCallback(() => {
     const { backDuration, forwardDuration } = calculateTimings();
-    let isBack = true;
 
     const tick = () => {
       if (!isPlayingRef.current) return;
 
-      const phase = isBack ? 'back' : 'forward';
+      const phase = isBackRef.current ? 'back' : 'forward';
       setCurrentPhase(phase);
       playFeedback(phase);
       onTick?.(phase);
 
       // 現在のフェーズの長さだけ待ってから次へ
-      const currentDuration = isBack ? backDuration : forwardDuration;
-      isBack = !isBack;
+      const currentDuration = isBackRef.current ? backDuration : forwardDuration;
+      isBackRef.current = !isBackRef.current;
 
       timeoutRef.current = setTimeout(tick, currentDuration);
     };
@@ -86,6 +86,7 @@ export function useMetronome(options: UseMetronomeOptions) {
     if (isPlayingRef.current) return;
 
     isPlayingRef.current = true;
+    isBackRef.current = true; // フェーズをリセット
     setIsPlaying(true);
     startTimeRef.current = new Date();
     runMetronome();
@@ -96,6 +97,7 @@ export function useMetronome(options: UseMetronomeOptions) {
     if (!isPlayingRef.current) return;
 
     isPlayingRef.current = false;
+    isBackRef.current = true; // フェーズをリセット
     setIsPlaying(false);
     setCurrentPhase('back');
 
@@ -134,16 +136,34 @@ export function useMetronome(options: UseMetronomeOptions) {
     };
   }, []);
 
-  // 設定変更時に再起動
+  // 設定変更時に再起動（runMetronomeを依存配列から除外して無限ループ防止）
   useEffect(() => {
     if (isPlayingRef.current) {
       // 一度停止して再開
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      runMetronome();
+      // 新しいタイミングで再開
+      const { backDuration, forwardDuration } = calculateTimings();
+      
+      const tick = () => {
+        if (!isPlayingRef.current) return;
+
+        const phase = isBackRef.current ? 'back' : 'forward';
+        setCurrentPhase(phase);
+        playFeedback(phase);
+        onTick?.(phase);
+
+        const currentDuration = isBackRef.current ? backDuration : forwardDuration;
+        isBackRef.current = !isBackRef.current;
+
+        timeoutRef.current = setTimeout(tick, currentDuration);
+      };
+      
+      tick();
     }
-  }, [bpm, backRatio, forwardRatio, runMetronome]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bpm, backRatio, forwardRatio]);
 
   return {
     isPlaying,
