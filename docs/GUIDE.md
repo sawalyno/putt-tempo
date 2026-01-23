@@ -16,6 +16,7 @@
 - [🚀 STEP 7：アプリを実装する](#-step-7アプリを実装する)
 - [📱 STEP 8：動作確認する](#-step-8動作確認する)
 - [🎨 STEP 9：デザインを調整する](#-step-9デザインを調整する)
+- [💳 STEP 9.5：課金（RevenueCat）を設定する](#-step-95課金revenuecatを設定する)
 - [📦 STEP 10：ストア申請準備](#-step-10ストア申請準備)
 - [🚢 STEP 11：ビルドして提出](#-step-11ビルドして提出)
 - [✅ 完了チェックリスト](#-完了チェックリスト)
@@ -521,6 +522,143 @@ eas build --profile development --platform android
 
 Stitchのデザインに合わせて修正してください。
 ```
+
+---
+
+## 💳 STEP 9.5：課金（RevenueCat）を設定する
+
+アプリ内課金を実装する場合、RevenueCatを使用します。
+
+### 9.5-1. RevenueCatアカウント作成
+
+1. https://app.revenuecat.com にアクセス
+2. **Sign Up** をクリックしてアカウント作成
+3. メールアドレスで認証を完了
+
+### 9.5-2. プロジェクト作成
+
+1. RevenueCatダッシュボードにログイン
+2. **+ New Project** をクリック
+3. プロジェクト名を入力（例: `My App`）
+4. **Create Project** をクリック
+
+### 9.5-3. アプリを追加
+
+**iOSアプリ:**
+1. **+ Add App** → **Platform**: iOS
+2. **Bundle ID**: App Store Connectで設定したBundle IDを入力
+3. **Create App**
+
+**Androidアプリ:**
+1. **+ Add App** → **Platform**: Android
+2. **Package Name**: Google Play Consoleで設定したPackage Nameを入力
+3. **Create App**
+
+### 9.5-4. Entitlement（権利）の作成
+
+1. **Entitlements** タブ → **+ New Entitlement**
+2. **Identifier**: `premium`（または任意の識別子）
+3. **Create**
+
+### 9.5-5. ストアで商品を登録
+
+**App Store Connect（iOS）:**
+1. アプリ → **機能** → **アプリ内課金** → **+**
+2. **非消耗型**（買い切り）または **自動更新サブスクリプション** を選択
+3. 商品ID、価格、説明を設定
+
+**Google Play Console（Android）:**
+1. アプリ → **収益化** → **商品** → **アプリ内商品**
+2. **商品を作成** → 商品タイプを選択
+3. 商品ID、価格、説明を設定
+
+### 9.5-6. RevenueCatでProductを連携
+
+1. **Products** タブ → アプリを選択
+2. **+ Add Product**
+3. **Product Identifier**: ストアで作成した商品IDを入力
+4. **Entitlement**: 作成したEntitlementを選択
+5. **Add Product**
+
+### 9.5-7. Offering（オファリング）の作成
+
+1. **Offerings** タブ → **+ New Offering**
+2. **Identifier**: `default`
+3. **Packages** → **+ Add Package**
+4. 作成したProductを選択
+5. **Save** → Offeringを **Active** に設定
+
+### 9.5-8. API Keyの取得
+
+1. **Settings** → **API Keys**
+2. **Public API Keys** セクションで以下をコピー:
+   - **iOS API Key** (例: `appl_xxxxxxxxxxxxx`)
+   - **Android API Key** (例: `goog_xxxxxxxxxxxxx`)
+
+### 9.5-9. 環境変数に設定
+
+`.env` ファイルに追加:
+
+```bash
+EXPO_PUBLIC_REVENUECAT_IOS_KEY=appl_xxxxxxxxxxxxx
+EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_xxxxxxxxxxxxx
+```
+
+### 9.5-10. テスト購入の設定
+
+**iOS（Sandbox テスター）:**
+1. App Store Connect → **ユーザーとアクセス** → **サンドボックステスター**
+2. テスト用アカウントを作成
+3. デバイスで **設定** → **App Store** → **サンドボックスアカウント** でログイン
+
+**Android（ライセンステスト）:**
+1. Google Play Console → **設定** → **ライセンステスト**
+2. テスト用のGmailアカウントを追加
+
+### 課金実装のコード例
+
+```typescript
+// lib/purchases.ts
+import Purchases from 'react-native-purchases';
+import { Platform } from 'react-native';
+
+const API_KEYS = {
+  ios: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '',
+  android: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '',
+};
+
+export async function initializePurchases() {
+  const apiKey = Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android;
+  if (!apiKey) return;
+  
+  await Purchases.configure({ apiKey });
+}
+
+export async function purchasePremium() {
+  const offerings = await Purchases.getOfferings();
+  const pkg = offerings.current?.availablePackages[0];
+  if (!pkg) throw new Error('No packages available');
+  
+  const { customerInfo } = await Purchases.purchasePackage(pkg);
+  return customerInfo.entitlements.active['premium'] !== undefined;
+}
+
+export async function isPremium(): Promise<boolean> {
+  const customerInfo = await Purchases.getCustomerInfo();
+  return customerInfo.entitlements.active['premium'] !== undefined;
+}
+```
+
+### チェックリスト
+
+- [ ] RevenueCatアカウント作成
+- [ ] プロジェクト・アプリ追加
+- [ ] Entitlement作成
+- [ ] App Store Connect / Google Play Consoleで商品登録
+- [ ] RevenueCatでProduct連携
+- [ ] Offering作成・有効化
+- [ ] API Key取得・環境変数設定
+- [ ] テスト購入確認
 
 ---
 
