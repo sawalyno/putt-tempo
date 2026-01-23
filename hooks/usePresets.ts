@@ -65,25 +65,21 @@ export function usePreset(presetId: string | null): Preset | null {
   return allPresets.find((p) => p.id === presetId) || null;
 }
 
-// プリセット上限チェック
+// プリセット上限チェック（キャッシュを使わずリアルタイム計算）
 export function usePresetLimit() {
   const { data: customPresets = [] } = useCustomPresets();
   
-  return useQuery({
-    queryKey: [PRESETS_QUERY_KEY, 'limit'],
-    queryFn: async () => {
-      const currentCount = customPresets.length;
-      const maxCount = FREE_PLAN_LIMITS.MAX_CUSTOM_PRESETS;
-      
-      return {
-        can_create: currentCount < maxCount,
-        current_count: currentCount,
-        max_count: maxCount,
-        plan: 'free' as const,
-      };
+  const currentCount = customPresets.length;
+  const maxCount = FREE_PLAN_LIMITS.MAX_CUSTOM_PRESETS;
+  
+  return {
+    data: {
+      can_create: currentCount < maxCount,
+      current_count: currentCount,
+      max_count: maxCount,
+      plan: 'free' as const,
     },
-    staleTime: 0, // 常に最新を取得
-  });
+  };
 }
 
 // プリセットキャッシュの無効化
