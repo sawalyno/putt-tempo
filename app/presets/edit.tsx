@@ -43,6 +43,7 @@ export default function PresetEditScreen() {
   const [forwardRatio, setForwardRatio] = useState(1);
   const [soundType, setSoundType] = useState<SoundType>('click');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isSoundPickerOpen, setIsSoundPickerOpen] = useState(false);
 
   // 編集モード時に既存データをロード
   useEffect(() => {
@@ -233,32 +234,47 @@ export default function PresetEditScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>音の種類</Text>
           <View style={styles.soundPickerContainer}>
-            <Pressable style={styles.soundPicker}>
+            <Pressable 
+              style={[styles.soundPicker, isSoundPickerOpen && styles.soundPickerOpen]}
+              onPress={() => setIsSoundPickerOpen(!isSoundPickerOpen)}
+            >
               <Text style={styles.soundPickerText}>
                 {SOUND_DEFINITIONS.find(s => s.id === soundType)?.name || 'クリック音'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#9ca3af" />
+              <Ionicons 
+                name={isSoundPickerOpen ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color="#9ca3af" 
+              />
             </Pressable>
+            {isSoundPickerOpen && (
+              <View style={styles.soundDropdown}>
+                {availableSounds.map((sound) => (
+                  <Pressable
+                    key={sound.id}
+                    style={[
+                      styles.soundDropdownItem,
+                      soundType === sound.id && styles.soundDropdownItemSelected,
+                    ]}
+                    onPress={() => {
+                      setSoundType(sound.id);
+                      setIsSoundPickerOpen(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.soundDropdownText,
+                      soundType === sound.id && styles.soundDropdownTextSelected,
+                    ]}>
+                      {sound.name}
+                    </Text>
+                    {soundType === sound.id && (
+                      <Ionicons name="checkmark" size={20} color="#2a73ea" />
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.soundList}>
-            {availableSounds.map((sound) => (
-              <Pressable
-                key={sound.id}
-                style={[
-                  styles.soundChip,
-                  soundType === sound.id && styles.soundChipSelected,
-                ]}
-                onPress={() => setSoundType(sound.id)}
-              >
-                <Text style={[
-                  styles.soundChipText,
-                  soundType === sound.id && styles.soundChipTextSelected,
-                ]}>
-                  {sound.name}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
         </View>
 
         {/* お気に入り */}
@@ -433,7 +449,7 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     position: 'relative',
-    height: 48,
+    height: 70,
   },
   sliderTrack: {
     position: 'absolute',
@@ -460,7 +476,7 @@ const styles = StyleSheet.create({
   sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 40,
+    marginTop: 52,
     paddingHorizontal: 4,
   },
   sliderLabel: {
@@ -533,34 +549,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  soundPickerOpen: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderBottomColor: 'transparent',
+  },
   soundPickerText: {
     fontSize: 16,
     fontFamily: 'Manrope_500Medium',
     color: '#ffffff',
   },
-  soundList: {
-    marginTop: 12,
-  },
-  soundChip: {
-    backgroundColor: '#222222',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
+  soundDropdown: {
+    backgroundColor: '#161616',
     borderWidth: 1,
+    borderTopWidth: 0,
     borderColor: '#374151',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
   },
-  soundChipSelected: {
-    backgroundColor: 'rgba(42, 115, 234, 0.2)',
-    borderColor: '#2a73ea',
+  soundDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
-  soundChipText: {
-    fontSize: 14,
+  soundDropdownItemSelected: {
+    backgroundColor: 'rgba(42, 115, 234, 0.1)',
+  },
+  soundDropdownText: {
+    fontSize: 15,
     fontFamily: 'Manrope_500Medium',
     color: '#9ca3af',
   },
-  soundChipTextSelected: {
+  soundDropdownTextSelected: {
     color: '#2a73ea',
+    fontFamily: 'Manrope_700Bold',
   },
   favoriteCard: {
     flexDirection: 'row',
