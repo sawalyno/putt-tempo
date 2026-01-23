@@ -107,21 +107,31 @@ export default function PremiumScreen() {
         <View style={styles.ctaContainer}>
           <Pressable
             style={({ pressed }) => [
-              styles.purchaseButton,
+              styles.purchaseButtonOuter,
               pressed && styles.purchaseButtonPressed,
               isLoading && styles.purchaseButtonDisabled,
             ]}
             onPress={handlePurchase}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <>
-                <Text style={styles.purchaseButtonTitle}>今すぐアップグレード</Text>
-                <Text style={styles.purchaseButtonPrice}>¥480（買い切り）</Text>
-              </>
-            )}
+            <LinearGradient
+              colors={['#F59E0B', '#D97706']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.purchaseButton}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#ffffff" size="large" />
+              ) : (
+                <View style={styles.purchaseButtonContent}>
+                  <View style={styles.purchaseButtonRow}>
+                    <Ionicons name="star" size={24} color="#ffffff" />
+                    <Text style={styles.purchaseButtonTitle}>今すぐアップグレード</Text>
+                  </View>
+                  <Text style={styles.purchaseButtonPrice}>¥480（買い切り）</Text>
+                </View>
+              )}
+            </LinearGradient>
           </Pressable>
 
           {/* 復元・注記 */}
@@ -276,17 +286,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
-  purchaseButton: {
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F59E0B',
-    alignItems: 'center',
-    justifyContent: 'center',
+  purchaseButtonOuter: {
+    borderRadius: 16,
     shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 10,
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  purchaseButton: {
+    width: '100%',
+    height: 72,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  purchaseButtonContent: {
+    alignItems: 'center',
+  },
+  purchaseButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   purchaseButtonPressed: {
     transform: [{ scale: 0.98 }],
@@ -302,9 +323,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   purchaseButtonPrice: {
-    fontSize: 15,
-    fontFamily: 'Manrope_500Medium',
-    color: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    fontFamily: 'Manrope_600SemiBold',
+    color: 'rgba(255,255,255,0.95)',
     marginTop: 4,
   },
   footer: {
