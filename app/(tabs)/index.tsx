@@ -8,12 +8,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pendulum } from '@/components/Pendulum';
 import { PresetSelector } from '@/components/PresetSelector';
 import { BannerAd } from '@/components/ads/BannerAd';
+import { APP_CONFIG, DEFAULT_PRESETS } from '@/constants';
 import { useMetronomeSession } from '@/hooks/useMetronomeSession';
 import { useAllPresets, usePreset } from '@/hooks/usePresets';
 import { usePremiumStatus } from '@/hooks/usePurchase';
 import { useSavePracticeSession } from '@/hooks/usePracticeStats';
 import { OutputMode, Preset } from '@/types';
-import { DEFAULT_PRESETS } from '@/constants';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -26,6 +26,9 @@ export default function HomeScreen() {
     DEFAULT_PRESETS[0].id
   );
   const selectedPreset = usePreset(selectedPresetId) || DEFAULT_PRESETS[0];
+
+  // インターバル設定（グローバル設定）
+  const [interval, setInterval] = useState(APP_CONFIG.DEFAULT_INTERVAL);
 
   // 出力モード（独立したトグル）
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
@@ -57,6 +60,7 @@ export default function HomeScreen() {
       forwardRatio,
       soundType: isSoundEnabled ? soundType : 'silent',
       outputMode,
+      interval,
     },
     selectedPreset.isDefault ? null : selectedPreset.id,
     selectedPreset.name,
@@ -75,6 +79,15 @@ export default function HomeScreen() {
   const handleTogglePlay = useCallback(() => {
     toggleSession();
   }, [toggleSession]);
+
+  // インターバル増減
+  const decreaseInterval = useCallback(() => {
+    setInterval((prev) => Math.max(APP_CONFIG.MIN_INTERVAL, prev - 1));
+  }, []);
+
+  const increaseInterval = useCallback(() => {
+    setInterval((prev) => Math.min(APP_CONFIG.MAX_INTERVAL, prev + 1));
+  }, []);
 
   // 音トグル
   const toggleSound = useCallback(() => {
@@ -113,9 +126,10 @@ export default function HomeScreen() {
           bpm={selectedPreset.bpm}
           backRatio={backRatio}
           forwardRatio={forwardRatio}
+          interval={interval}
         />
 
-        {/* BPM・比率表示 */}
+        {/* BPM・比率・インターバル表示 */}
         <View style={styles.displayContainer}>
           <View style={styles.bpmContainer}>
             <Text style={styles.bpmText}>{selectedPreset.bpm}</Text>
@@ -127,6 +141,32 @@ export default function HomeScreen() {
               {backRatio} : {forwardRatio} Ratio
             </Text>
             <View style={styles.ratioDivider} />
+          </View>
+
+          {/* インターバル設定 */}
+          <View style={styles.intervalContainer}>
+            <Text style={styles.intervalLabel}>インターバル</Text>
+            <View style={styles.intervalSelector}>
+              <Pressable 
+                onPress={decreaseInterval}
+                style={({ pressed }) => [
+                  styles.intervalButton,
+                  pressed && styles.intervalButtonPressed,
+                ]}
+              >
+                <Ionicons name="remove-circle" size={28} color="#2a73ea" />
+              </Pressable>
+              <Text style={styles.intervalValue}>{interval}秒</Text>
+              <Pressable 
+                onPress={increaseInterval}
+                style={({ pressed }) => [
+                  styles.intervalButton,
+                  pressed && styles.intervalButtonPressed,
+                ]}
+              >
+                <Ionicons name="add-circle" size={28} color="#2a73ea" />
+              </Pressable>
+            </View>
           </View>
         </View>
       </View>
@@ -286,6 +326,39 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Manrope_700Bold',
     color: '#2a73ea',
+  },
+  intervalContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  intervalLabel: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  intervalSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  intervalButton: {
+    padding: 4,
+  },
+  intervalButtonPressed: {
+    opacity: 0.6,
+  },
+  intervalValue: {
+    fontSize: 24,
+    fontFamily: 'Manrope_700Bold',
+    color: '#ffffff',
+    minWidth: 60,
+    textAlign: 'center',
   },
   controlPanel: {
     flex: 1,

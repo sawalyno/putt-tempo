@@ -8,6 +8,10 @@ export const APP_CONFIG = {
   MAX_PRESET_NAME_LENGTH: 20,
   MIN_SESSION_DURATION: 10, // 秒
   MAX_SESSION_DURATION: 7200, // 秒（2時間）
+  // インターバル設定
+  MIN_INTERVAL: 1, // 秒
+  MAX_INTERVAL: 10, // 秒
+  DEFAULT_INTERVAL: 3, // 秒
 } as const;
 
 export const FREE_PLAN_LIMITS = {

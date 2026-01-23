@@ -106,10 +106,14 @@ export interface MetronomeSettings {
   forwardRatio: number;
   soundType: SoundType;
   outputMode: OutputMode;
+  interval: number; // インターバル秒数（1-10）
 }
 
 /** 出力モード */
 export type OutputMode = 'sound' | 'vibration' | 'both';
+
+/** メトロノームフェーズ */
+export type MetronomePhase = 'address' | 'takeBack' | 'impact' | 'interval' | 'idle';
 
 // ========================================
 // RPC Response Types

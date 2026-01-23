@@ -1,14 +1,16 @@
-// components/Pendulum.tsx - 水平スライダー型アニメーション（React Native Animated API使用）
+// components/Pendulum.tsx - 水平スライダー型アニメーション（3フェーズ対応）
 
+import { MetronomePhase } from '@/types';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
 
 interface PendulumProps {
   isPlaying: boolean;
-  currentPhase: 'back' | 'forward' | 'idle';
+  currentPhase: MetronomePhase;
   bpm: number;
   backRatio: number;
   forwardRatio: number;
+  interval: number;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -22,6 +24,7 @@ export function Pendulum({
   bpm,
   backRatio,
   forwardRatio,
+  interval,
 }: PendulumProps) {
   const position = useRef(new Animated.Value(0)).current;
   const indicatorScale = useRef(new Animated.Value(1)).current;
@@ -30,7 +33,7 @@ export function Pendulum({
   // currentPhaseに基づいてアニメーション
   useEffect(() => {
     // 再生停止時
-    if (!isPlaying) {
+    if (!isPlaying || currentPhase === 'idle') {
       Animated.parallel([
         Animated.timing(position, {
           toValue: 0,
@@ -49,52 +52,89 @@ export function Pendulum({
 
     const cycleDuration = 60000 / bpm;
     const totalRatio = backRatio + forwardRatio;
-    const backMs = (backRatio / totalRatio) * cycleDuration;
-    const forwardMs = (forwardRatio / totalRatio) * cycleDuration;
+    const takeBackMs = (backRatio / totalRatio) * cycleDuration;
+    const impactMs = (forwardRatio / totalRatio) * cycleDuration;
+    const intervalMs = interval * 1000;
 
-    if (currentPhase === 'back') {
-      // バックスイング: 中央から右へ移動
-      Animated.parallel([
-        Animated.timing(position, {
-          toValue: MAX_OFFSET,
-          duration: backMs * 0.9,
-          useNativeDriver: true,
-        }),
-        Animated.timing(indicatorScale, {
-          toValue: 0.85,
-          duration: backMs * 0.5,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      impactFlash.setValue(0);
-    } else if (currentPhase === 'forward') {
-      // フォワード: 右から中央へ戻る（インパクト）
-      Animated.parallel([
-        Animated.timing(position, {
-          toValue: 0,
-          duration: forwardMs * 0.9,
-          useNativeDriver: true,
-        }),
-        Animated.timing(indicatorScale, {
-          toValue: 1.2,
-          duration: forwardMs * 0.3,
-          useNativeDriver: true,
-        }),
-        Animated.sequence([
-          Animated.timing(impactFlash, {
+    switch (currentPhase) {
+      case 'address':
+        // アドレス: 中央位置（開始点）
+        Animated.parallel([
+          Animated.timing(position, {
+            toValue: 0,
+            duration: 50,
+            useNativeDriver: true,
+          }),
+          Animated.timing(indicatorScale, {
             toValue: 1,
             duration: 50,
             useNativeDriver: true,
           }),
-          Animated.timing(impactFlash, {
-            toValue: 0,
-            duration: 200,
+        ]).start();
+        impactFlash.setValue(0);
+        break;
+
+      case 'takeBack':
+        // テイクバック: 中央から右へ移動
+        Animated.parallel([
+          Animated.timing(position, {
+            toValue: MAX_OFFSET,
+            duration: takeBackMs * 0.9,
             useNativeDriver: true,
           }),
-        ]),
-      ]).start();
+          Animated.timing(indicatorScale, {
+            toValue: 0.85,
+            duration: takeBackMs * 0.5,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        break;
+
+      case 'impact':
+        // インパクト: 右から左へ通り抜け
+        Animated.parallel([
+          Animated.timing(position, {
+            toValue: -MAX_OFFSET,
+            duration: impactMs * 0.9,
+            useNativeDriver: true,
+          }),
+          Animated.timing(indicatorScale, {
+            toValue: 1.2,
+            duration: impactMs * 0.3,
+            useNativeDriver: true,
+          }),
+          Animated.sequence([
+            Animated.timing(impactFlash, {
+              toValue: 1,
+              duration: 50,
+              useNativeDriver: true,
+            }),
+            Animated.timing(impactFlash, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]).start();
+        break;
+
+      case 'interval':
+        // インターバル: 左から中央に戻る
+        Animated.parallel([
+          Animated.timing(position, {
+            toValue: 0,
+            duration: Math.min(intervalMs * 0.3, 500),
+            useNativeDriver: true,
+          }),
+          Animated.timing(indicatorScale, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        break;
     }
-  }, [isPlaying, currentPhase, bpm, backRatio, forwardRatio]);
+  }, [isPlaying, currentPhase, bpm, backRatio, forwardRatio, interval]);
 
   return (
     <View style={styles.container}>
@@ -111,25 +151,35 @@ export function Pendulum({
         ]}
       />
 
-      {/* フェーズインジケーター */}
+      {/* フェーズインジケーター（3つ） */}
       <View style={styles.phaseIndicator}>
         <View style={[
           styles.phaseItem,
-          currentPhase === 'back' && isPlaying && styles.phaseItemActive,
+          currentPhase === 'address' && isPlaying && styles.phaseItemActive,
         ]}>
           <Text style={[
             styles.phaseText,
-            currentPhase === 'back' && isPlaying && styles.phaseTextActive,
+            currentPhase === 'address' && isPlaying && styles.phaseTextActive,
+          ]}>ADDRESS</Text>
+        </View>
+        <View style={styles.phaseDivider} />
+        <View style={[
+          styles.phaseItem,
+          currentPhase === 'takeBack' && isPlaying && styles.phaseItemActive,
+        ]}>
+          <Text style={[
+            styles.phaseText,
+            currentPhase === 'takeBack' && isPlaying && styles.phaseTextActive,
           ]}>BACK</Text>
         </View>
         <View style={styles.phaseDivider} />
         <View style={[
           styles.phaseItem,
-          currentPhase === 'forward' && isPlaying && styles.phaseItemForward,
+          currentPhase === 'impact' && isPlaying && styles.phaseItemImpact,
         ]}>
           <Text style={[
             styles.phaseText,
-            currentPhase === 'forward' && isPlaying && styles.phaseTextForward,
+            currentPhase === 'impact' && isPlaying && styles.phaseTextImpact,
           ]}>IMPACT</Text>
         </View>
       </View>
@@ -138,11 +188,14 @@ export function Pendulum({
       <View style={styles.sliderContainer}>
         {/* 背景トラック */}
         <View style={styles.track}>
-          {/* 中央マーカー（インパクトポイント） */}
+          {/* 左端マーカー（フォロースルー点） */}
+          <View style={styles.leftMarker} />
+          
+          {/* 中央マーカー（アドレス/インパクトポイント） */}
           <View style={styles.centerMarker} />
           
           {/* 右端マーカー（バック最大点） */}
-          <View style={styles.endMarker} />
+          <View style={styles.rightMarker} />
         </View>
 
         {/* 移動するインジケーター */}
@@ -163,8 +216,9 @@ export function Pendulum({
 
       {/* ラベル */}
       <View style={styles.labels}>
+        <Text style={styles.labelLeft}>FOLLOW</Text>
         <Text style={styles.labelCenter}>●</Text>
-        <Text style={styles.labelRight}>→ BACK</Text>
+        <Text style={styles.labelRight}>BACK →</Text>
       </View>
     </View>
   );
@@ -188,11 +242,11 @@ const styles = StyleSheet.create({
   phaseIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
+    gap: 8,
     marginBottom: 32,
   },
   phaseItem: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -203,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  phaseItemForward: {
+  phaseItemImpact: {
     backgroundColor: 'rgba(42, 115, 234, 0.2)',
     borderColor: '#2a73ea',
   },
@@ -213,15 +267,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   phaseText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Manrope_700Bold',
     color: 'rgba(255,255,255,0.3)',
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   phaseTextActive: {
     color: 'rgba(255,255,255,0.9)',
   },
-  phaseTextForward: {
+  phaseTextImpact: {
     color: '#2a73ea',
   },
   sliderContainer: {
@@ -237,6 +291,15 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     position: 'relative',
   },
+  leftMarker: {
+    position: 'absolute',
+    left: 0,
+    top: -4,
+    width: 2,
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 1,
+  },
   centerMarker: {
     position: 'absolute',
     left: '50%',
@@ -247,7 +310,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a73ea',
     borderRadius: 3,
   },
-  endMarker: {
+  rightMarker: {
     position: 'absolute',
     right: 0,
     top: -4,
@@ -283,13 +346,19 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 4,
   },
+  labelLeft: {
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.3)',
+    fontFamily: 'Manrope_700Bold',
+    letterSpacing: 1,
+  },
   labelCenter: {
     fontSize: 8,
     color: '#2a73ea',
     fontFamily: 'Manrope_700Bold',
   },
   labelRight: {
-    fontSize: 10,
+    fontSize: 9,
     color: 'rgba(255,255,255,0.3)',
     fontFamily: 'Manrope_700Bold',
     letterSpacing: 1,

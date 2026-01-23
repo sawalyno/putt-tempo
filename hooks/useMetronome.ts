@@ -2,7 +2,7 @@
 
 import { soundPlayer } from '@/lib/soundPlayer';
 import { vibrationPlayer } from '@/lib/vibrationPlayer';
-import { OutputMode, SoundType } from '@/types';
+import { MetronomePhase, OutputMode, SoundType } from '@/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseMetronomeOptions {
@@ -11,34 +11,50 @@ interface UseMetronomeOptions {
   forwardRatio: number;
   soundType: SoundType;
   outputMode: OutputMode;
-  onTick?: (phase: 'back' | 'forward') => void;
+  interval: number; // インターバル秒数
+  onTick?: (phase: MetronomePhase) => void;
 }
 
 export function useMetronome(options: UseMetronomeOptions) {
-  const { bpm, backRatio, forwardRatio, soundType, outputMode, onTick } =
+  const { bpm, backRatio, forwardRatio, soundType, outputMode, interval, onTick } =
     options;
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentPhase, setCurrentPhase] = useState<'back' | 'forward'>('back');
+  const [currentPhase, setCurrentPhase] = useState<MetronomePhase>('idle');
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const isPlayingRef = useRef(false);
-  const isBackRef = useRef(true); // フェーズ追跡用ref
+  const phaseRef = useRef<MetronomePhase>('address'); // 3フェーズ + interval
 
   // タイミング計算
+  // address: 瞬間（音のみ、次のフェーズまでの待機時間は短め）
+  // takeBack: backRatioに基づく時間
+  // impact: forwardRatioに基づく時間
+  // interval: ユーザー設定のインターバル時間
   const calculateTimings = useCallback(() => {
     const cycleDuration = 60000 / bpm; // 1サイクルの時間(ms)
     const totalRatio = backRatio + forwardRatio;
-    const backDuration = cycleDuration * (backRatio / totalRatio);
-    const forwardDuration = cycleDuration * (forwardRatio / totalRatio);
+    const takeBackDuration = cycleDuration * (backRatio / totalRatio);
+    const impactDuration = cycleDuration * (forwardRatio / totalRatio);
+    const addressDuration = 100; // アドレスは短い待機（100ms）
+    const intervalDuration = interval * 1000; // 秒をmsに変換
 
-    return { cycleDuration, backDuration, forwardDuration };
-  }, [bpm, backRatio, forwardRatio]);
+    return { 
+      cycleDuration, 
+      addressDuration,
+      takeBackDuration, 
+      impactDuration,
+      intervalDuration,
+    };
+  }, [bpm, backRatio, forwardRatio, interval]);
 
   // 音/バイブを再生
   const playFeedback = useCallback(
-    async (phase: 'back' | 'forward') => {
+    async (phase: MetronomePhase) => {
+      // intervalフェーズでは音を鳴らさない
+      if (phase === 'interval' || phase === 'idle') return;
+
       const shouldPlaySound = outputMode === 'sound' || outputMode === 'both';
       const shouldVibrate =
         outputMode === 'vibration' || outputMode === 'both';
@@ -48,10 +64,11 @@ export function useMetronome(options: UseMetronomeOptions) {
       }
 
       if (shouldVibrate) {
-        if (phase === 'back') {
-          vibrationPlayer.vibrateBack();
+        // フェーズに応じたバイブレーション
+        if (phase === 'impact') {
+          vibrationPlayer.vibrateForward(); // インパクトは強め
         } else {
-          vibrationPlayer.vibrateForward();
+          vibrationPlayer.vibrateBack(); // アドレス、テイクバックは通常
         }
       }
     },
@@ -60,21 +77,42 @@ export function useMetronome(options: UseMetronomeOptions) {
 
   // メトロノームのメインループ
   const runMetronome = useCallback(() => {
-    const { backDuration, forwardDuration } = calculateTimings();
+    const { addressDuration, takeBackDuration, impactDuration, intervalDuration } = calculateTimings();
 
     const tick = () => {
       if (!isPlayingRef.current) return;
 
-      const phase = isBackRef.current ? 'back' : 'forward';
+      const phase = phaseRef.current;
       setCurrentPhase(phase);
       playFeedback(phase);
       onTick?.(phase);
 
-      // 現在のフェーズの長さだけ待ってから次へ
-      const currentDuration = isBackRef.current ? backDuration : forwardDuration;
-      isBackRef.current = !isBackRef.current;
+      // 次のフェーズと待機時間を決定
+      let nextPhase: MetronomePhase;
+      let duration: number;
 
-      timeoutRef.current = setTimeout(tick, currentDuration);
+      switch (phase) {
+        case 'address':
+          nextPhase = 'takeBack';
+          duration = addressDuration;
+          break;
+        case 'takeBack':
+          nextPhase = 'impact';
+          duration = takeBackDuration;
+          break;
+        case 'impact':
+          nextPhase = 'interval';
+          duration = impactDuration;
+          break;
+        case 'interval':
+        default:
+          nextPhase = 'address';
+          duration = intervalDuration;
+          break;
+      }
+
+      phaseRef.current = nextPhase;
+      timeoutRef.current = setTimeout(tick, duration);
     };
 
     // 最初のティック
@@ -86,7 +124,7 @@ export function useMetronome(options: UseMetronomeOptions) {
     if (isPlayingRef.current) return;
 
     isPlayingRef.current = true;
-    isBackRef.current = true; // フェーズをリセット
+    phaseRef.current = 'address'; // フェーズをリセット
     setIsPlaying(true);
     startTimeRef.current = new Date();
     runMetronome();
@@ -97,9 +135,9 @@ export function useMetronome(options: UseMetronomeOptions) {
     if (!isPlayingRef.current) return;
 
     isPlayingRef.current = false;
-    isBackRef.current = true; // フェーズをリセット
+    phaseRef.current = 'address'; // フェーズをリセット
     setIsPlaying(false);
-    setCurrentPhase('back');
+    setCurrentPhase('idle');
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -144,26 +182,47 @@ export function useMetronome(options: UseMetronomeOptions) {
         clearTimeout(timeoutRef.current);
       }
       // 新しいタイミングで再開
-      const { backDuration, forwardDuration } = calculateTimings();
+      const { addressDuration, takeBackDuration, impactDuration, intervalDuration } = calculateTimings();
       
       const tick = () => {
         if (!isPlayingRef.current) return;
 
-        const phase = isBackRef.current ? 'back' : 'forward';
+        const phase = phaseRef.current;
         setCurrentPhase(phase);
         playFeedback(phase);
         onTick?.(phase);
 
-        const currentDuration = isBackRef.current ? backDuration : forwardDuration;
-        isBackRef.current = !isBackRef.current;
+        let nextPhase: MetronomePhase;
+        let duration: number;
 
-        timeoutRef.current = setTimeout(tick, currentDuration);
+        switch (phase) {
+          case 'address':
+            nextPhase = 'takeBack';
+            duration = addressDuration;
+            break;
+          case 'takeBack':
+            nextPhase = 'impact';
+            duration = takeBackDuration;
+            break;
+          case 'impact':
+            nextPhase = 'interval';
+            duration = impactDuration;
+            break;
+          case 'interval':
+          default:
+            nextPhase = 'address';
+            duration = intervalDuration;
+            break;
+        }
+
+        phaseRef.current = nextPhase;
+        timeoutRef.current = setTimeout(tick, duration);
       };
       
       tick();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bpm, backRatio, forwardRatio]);
+  }, [bpm, backRatio, forwardRatio, interval]);
 
   return {
     isPlaying,
