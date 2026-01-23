@@ -1,33 +1,29 @@
-// hooks/usePurchase.ts - ローカルベースの課金管理
+// hooks/usePurchase.ts - ローカルベースの課金管理（React Query使用）
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getIsPremium, setIsPremium as saveIsPremium } from '@/lib/storage';
 
 // RevenueCat SDKが追加された後に有効化
 // import Purchases, { CustomerInfo } from 'react-native-purchases';
 
+const PREMIUM_QUERY_KEY = ['premium_status'];
+
 export function usePurchase() {
-  const [isPremium, setIsPremiumState] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  // プレミアム状態を確認（ローカルストレージから）
-  const checkPremiumStatus = useCallback(async () => {
-    try {
+  // プレミアム状態をReact Queryで管理
+  const { data: isPremium = false, isLoading: isChecking } = useQuery({
+    queryKey: PREMIUM_QUERY_KEY,
+    queryFn: async () => {
       const premium = await getIsPremium();
-      setIsPremiumState(premium);
-    } catch (error) {
-      console.error('Failed to check premium status:', error);
-      setIsPremiumState(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkPremiumStatus();
-  }, [checkPremiumStatus]);
+      return premium;
+    },
+    staleTime: 1000 * 60, // 1分
+  });
 
   // 購入処理（RevenueCat SDK追加後に実装）
   const purchase = useCallback(async () => {
-    setIsLoading(true);
     try {
       // TODO: RevenueCat SDK実装
       // const offerings = await Purchases.getOfferings();
@@ -37,48 +33,46 @@ export function usePurchase() {
       
       // 仮実装: ローカルに保存（テスト用）
       await saveIsPremium(true);
-      setIsPremiumState(true);
+      
+      // キャッシュを即座に更新
+      queryClient.setQueryData(PREMIUM_QUERY_KEY, true);
+      
       return true;
     } catch (error) {
-      console.error('Purchase failed:', error);
+      console.log('Purchase failed:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   // 復元処理（RevenueCat SDK追加後に実装）
   const restore = useCallback(async () => {
-    setIsLoading(true);
     try {
       // TODO: RevenueCat SDK実装
       // const { customerInfo } = await Purchases.restorePurchases();
       // const restored = customerInfo.entitlements.active['premium'] !== undefined;
       
-      // 仮実装: 現在の状態を返す
-      await checkPremiumStatus();
+      // 仮実装: キャッシュを再取得
+      await queryClient.invalidateQueries({ queryKey: PREMIUM_QUERY_KEY });
       return isPremium;
     } catch (error) {
-      console.error('Restore failed:', error);
+      console.log('Restore failed:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
-  }, [checkPremiumStatus, isPremium]);
+  }, [queryClient, isPremium]);
 
   // 無料プランに戻す（開発・テスト用）
   const resetToFree = useCallback(async () => {
     await saveIsPremium(false);
-    setIsPremiumState(false);
-  }, []);
+    // キャッシュを即座に更新
+    queryClient.setQueryData(PREMIUM_QUERY_KEY, false);
+  }, [queryClient]);
 
   return {
     isPremium,
-    isLoading,
+    isLoading: isChecking,
     purchase,
     restore,
     resetToFree,
-    checkPremiumStatus,
   };
 }
 
