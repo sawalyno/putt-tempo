@@ -71,26 +71,27 @@ export default function PresetEditScreen() {
           id,
           name: name.trim(),
           bpm,
-          back_ratio: backRatio,
-          forward_ratio: forwardRatio,
-          sound_type: soundType,
-          is_favorite: isFavorite,
+          backRatio,
+          forwardRatio,
+          soundType,
+          isFavorite,
         });
       } else {
         await createPresetMutation.mutateAsync({
           name: name.trim(),
           bpm,
-          back_ratio: backRatio,
-          forward_ratio: forwardRatio,
-          sound_type: soundType,
-          is_favorite: isFavorite,
+          backRatio,
+          forwardRatio,
+          soundType,
+          isFavorite,
         });
       }
       router.back();
     } catch (error) {
+      console.error('Preset save error:', error);
       Alert.alert('エラー', '保存に失敗しました');
     }
-  }, [name, bpm, backRatio, forwardRatio, soundType, isFavorite, isEditing, id]);
+  }, [name, bpm, backRatio, forwardRatio, soundType, isFavorite, isEditing, id, createPresetMutation, updatePresetMutation]);
 
   const handleDelete = useCallback(() => {
     if (!id) return;
@@ -115,21 +116,10 @@ export default function PresetEditScreen() {
     playSound(soundType);
   }, [soundType, playSound]);
 
-  const adjustRatio = (delta: number) => {
-    const currentRatio = backRatio / forwardRatio;
-    const newRatio = Math.max(0.5, Math.min(4, currentRatio + delta * 0.1));
-    
-    // 比率を整数に近い値に調整
-    if (newRatio >= 2) {
-      setBackRatio(Math.round(newRatio));
-      setForwardRatio(1);
-    } else if (newRatio <= 0.5) {
-      setBackRatio(1);
-      setForwardRatio(2);
-    } else {
-      setBackRatio(Math.round(newRatio * 10) / 10);
-      setForwardRatio(1);
-    }
+  // 比率調整（シンプルにbackRatioを1〜5の範囲で調整）
+  const adjustBackRatio = (delta: number) => {
+    const newBackRatio = Math.max(APP_CONFIG.MIN_RATIO, Math.min(APP_CONFIG.MAX_RATIO, backRatio + delta));
+    setBackRatio(newBackRatio);
   };
 
   const availableSounds = getAvailableSounds(isPremium);
@@ -160,7 +150,7 @@ export default function PresetEditScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>プリセット名</Text>
-            <Text style={styles.charCount}>{name.length}/{APP_CONFIG.PRESET_NAME_MAX_LENGTH}文字</Text>
+            <Text style={styles.charCount}>{name.length}/{APP_CONFIG.MAX_PRESET_NAME_LENGTH}文字</Text>
           </View>
           <View style={styles.inputContainer}>
             <TextInput
@@ -169,7 +159,7 @@ export default function PresetEditScreen() {
               onChangeText={setName}
               placeholder="例：高速グリーン用"
               placeholderTextColor="#4b5563"
-              maxLength={APP_CONFIG.PRESET_NAME_MAX_LENGTH}
+              maxLength={APP_CONFIG.MAX_PRESET_NAME_LENGTH}
             />
             <Ionicons name="pencil" size={20} color="#4b5563" style={styles.inputIcon} />
           </View>
@@ -190,12 +180,12 @@ export default function PresetEditScreen() {
             </View>
             <View style={styles.sliderContainer}>
               <View style={styles.sliderTrack}>
-                <View style={[styles.sliderFill, { width: `${((bpm - APP_CONFIG.BPM_MIN) / (APP_CONFIG.BPM_MAX - APP_CONFIG.BPM_MIN)) * 100}%` }]} />
+                <View style={[styles.sliderFill, { width: `${((bpm - APP_CONFIG.MIN_BPM) / (APP_CONFIG.MAX_BPM - APP_CONFIG.MIN_BPM)) * 100}%` }]} />
               </View>
               <Slider
                 style={styles.slider}
-                minimumValue={APP_CONFIG.BPM_MIN}
-                maximumValue={APP_CONFIG.BPM_MAX}
+                minimumValue={APP_CONFIG.MIN_BPM}
+                maximumValue={APP_CONFIG.MAX_BPM}
                 step={1}
                 value={bpm}
                 onValueChange={setBpm}
@@ -204,9 +194,9 @@ export default function PresetEditScreen() {
                 thumbTintColor="#2a73ea"
               />
               <View style={styles.sliderLabels}>
-                <Text style={styles.sliderLabel}>{APP_CONFIG.BPM_MIN}</Text>
+                <Text style={styles.sliderLabel}>{APP_CONFIG.MIN_BPM}</Text>
                 <Text style={styles.sliderLabel}>115</Text>
-                <Text style={styles.sliderLabel}>{APP_CONFIG.BPM_MAX}</Text>
+                <Text style={styles.sliderLabel}>{APP_CONFIG.MAX_BPM}</Text>
               </View>
             </View>
           </View>
@@ -218,7 +208,7 @@ export default function PresetEditScreen() {
           <View style={styles.ratioCard}>
             <Pressable
               style={styles.ratioButton}
-              onPress={() => adjustRatio(-1)}
+              onPress={() => adjustBackRatio(-1)}
             >
               <Ionicons name="remove" size={24} color="#ffffff" />
             </Pressable>
@@ -232,7 +222,7 @@ export default function PresetEditScreen() {
             </View>
             <Pressable
               style={[styles.ratioButton, styles.ratioButtonAdd]}
-              onPress={() => adjustRatio(1)}
+              onPress={() => adjustBackRatio(1)}
             >
               <Ionicons name="add" size={24} color="#ffffff" />
             </Pressable>
