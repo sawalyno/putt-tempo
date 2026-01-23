@@ -277,8 +277,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   purchaseButton: {
-    height: 72,
-    borderRadius: 36,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#F59E0B',
     alignItems: 'center',
     justifyContent: 'center',
@@ -296,15 +296,16 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   purchaseButtonTitle: {
-    fontSize: 18,
-    fontFamily: 'Manrope_700Bold',
+    fontSize: 20,
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#ffffff',
+    letterSpacing: 0.5,
   },
   purchaseButtonPrice: {
-    fontSize: 14,
-    fontFamily: 'Manrope_400Regular',
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
+    fontSize: 15,
+    fontFamily: 'Manrope_500Medium',
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
   },
   footer: {
     alignItems: 'center',
