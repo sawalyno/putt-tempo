@@ -1,69 +1,111 @@
-// hooks/usePurchase.ts - ローカルベースの課金管理（React Query使用）
+// hooks/usePurchase.ts - 課金管理（RevenueCat + ローカルフォールバック）
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getIsPremium, setIsPremium as saveIsPremium } from '@/lib/storage';
+import { Alert } from 'react-native';
 
-// RevenueCat SDKが追加された後に有効化
-// import Purchases, { CustomerInfo } from 'react-native-purchases';
+import { getIsPremium, setIsPremium as saveIsPremiumLocal } from '@/lib/storage';
+import {
+  initializePurchases,
+  checkPremiumStatus as checkPremiumStatusRC,
+  purchasePremium as purchasePremiumRC,
+  restorePurchases as restorePurchasesRC,
+  hasApiKey,
+  isPurchasesInitialized,
+} from '@/lib/purchases';
 
 const PREMIUM_QUERY_KEY = ['premium_status'];
 
 export function usePurchase() {
   const queryClient = useQueryClient();
+  const isRevenueCatConfigured = hasApiKey();
+
+  // RevenueCat初期化
+  useEffect(() => {
+    if (isRevenueCatConfigured) {
+      initializePurchases();
+    }
+  }, [isRevenueCatConfigured]);
 
   // プレミアム状態をReact Queryで管理
-  const { data: isPremium = false, isLoading: isChecking } = useQuery({
+  const { data: isPremium = false, isLoading: isChecking, refetch } = useQuery({
     queryKey: PREMIUM_QUERY_KEY,
     queryFn: async () => {
+      // RevenueCatが設定されている場合はそちらを使用
+      if (isRevenueCatConfigured && isPurchasesInitialized()) {
+        const premium = await checkPremiumStatusRC();
+        // ローカルにもバックアップ保存
+        await saveIsPremiumLocal(premium);
+        return premium;
+      }
+      
+      // フォールバック: ローカルストレージを使用
       const premium = await getIsPremium();
       return premium;
     },
     staleTime: 1000 * 60, // 1分
   });
 
-  // 購入処理（RevenueCat SDK追加後に実装）
+  // 購入処理
   const purchase = useCallback(async () => {
     try {
-      // TODO: RevenueCat SDK実装
-      // const offerings = await Purchases.getOfferings();
-      // const premiumPackage = offerings.current?.availablePackages[0];
-      // if (!premiumPackage) throw new Error('Package not found');
-      // const { customerInfo } = await Purchases.purchasePackage(premiumPackage);
+      // RevenueCatが設定されている場合
+      if (isRevenueCatConfigured && isPurchasesInitialized()) {
+        const result = await purchasePremiumRC();
+        
+        if (result.success) {
+          // ローカルにもバックアップ保存
+          await saveIsPremiumLocal(true);
+          // キャッシュを即座に更新
+          queryClient.setQueryData(PREMIUM_QUERY_KEY, true);
+          return true;
+        }
+        
+        // ユーザーキャンセルの場合はエラーを投げない
+        return false;
+      }
       
-      // 仮実装: ローカルに保存（テスト用）
-      await saveIsPremium(true);
-      
-      // キャッシュを即座に更新
+      // フォールバック: ローカルに保存（テスト用）
+      await saveIsPremiumLocal(true);
       queryClient.setQueryData(PREMIUM_QUERY_KEY, true);
-      
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      // ユーザーキャンセルは静かに処理
+      if (error?.userCancelled) {
+        return false;
+      }
       console.log('Purchase failed:', error);
       throw error;
     }
-  }, [queryClient]);
+  }, [queryClient, isRevenueCatConfigured]);
 
-  // 復元処理（RevenueCat SDK追加後に実装）
+  // 復元処理
   const restore = useCallback(async () => {
     try {
-      // TODO: RevenueCat SDK実装
-      // const { customerInfo } = await Purchases.restorePurchases();
-      // const restored = customerInfo.entitlements.active['premium'] !== undefined;
+      // RevenueCatが設定されている場合
+      if (isRevenueCatConfigured && isPurchasesInitialized()) {
+        const result = await restorePurchasesRC();
+        
+        // ローカルにもバックアップ保存
+        await saveIsPremiumLocal(result.isPremium);
+        // キャッシュを更新
+        queryClient.setQueryData(PREMIUM_QUERY_KEY, result.isPremium);
+        
+        return result.isPremium;
+      }
       
-      // 仮実装: キャッシュを再取得
-      await queryClient.invalidateQueries({ queryKey: PREMIUM_QUERY_KEY });
+      // フォールバック: キャッシュを再取得
+      await refetch();
       return isPremium;
     } catch (error) {
       console.log('Restore failed:', error);
       throw error;
     }
-  }, [queryClient, isPremium]);
+  }, [queryClient, isPremium, refetch, isRevenueCatConfigured]);
 
   // 無料プランに戻す（開発・テスト用）
   const resetToFree = useCallback(async () => {
-    await saveIsPremium(false);
-    // キャッシュを即座に更新
+    await saveIsPremiumLocal(false);
     queryClient.setQueryData(PREMIUM_QUERY_KEY, false);
   }, [queryClient]);
 
@@ -73,6 +115,7 @@ export function usePurchase() {
     purchase,
     restore,
     resetToFree,
+    isRevenueCatConfigured,
   };
 }
 

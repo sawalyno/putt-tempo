@@ -1,67 +1,73 @@
-// lib/purchases.ts
+// lib/purchases.ts - RevenueCat SDK初期化・購入処理
 
 import { Platform } from 'react-native';
-import Purchases, { LOG_LEVEL, CustomerInfo } from 'react-native-purchases';
+import Purchases, { 
+  CustomerInfo, 
+  PurchasesOffering,
+  LOG_LEVEL,
+} from 'react-native-purchases';
+import Constants from 'expo-constants';
 
-// RevenueCat API Keys
-// TODO: RevenueCatダッシュボードから取得したキーに置き換える
+// API Keys（app.config.tsのextraから取得、または直接設定）
 const API_KEYS = {
-  ios: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || 'appl_xxxxx',
-  android: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || 'goog_xxxxx',
+  ios: Constants.expoConfig?.extra?.revenueCatIosKey || '',
+  android: Constants.expoConfig?.extra?.revenueCatAndroidKey || '',
 };
 
-// Entitlement ID
-export const PREMIUM_ENTITLEMENT = 'premium';
+// Entitlement ID（RevenueCatダッシュボードで設定）
+const ENTITLEMENT_ID = 'premium';
 
-// 初期化フラグ
 let isInitialized = false;
 
 /**
  * RevenueCat SDKを初期化
+ * @param userId オプションのユーザーID（匿名の場合は省略）
  */
 export async function initializePurchases(userId?: string): Promise<void> {
-  if (isInitialized) return;
+  if (isInitialized) {
+    console.log('[Purchases] Already initialized');
+    return;
+  }
+
+  const apiKey = Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android;
+  
+  if (!apiKey) {
+    console.warn('[Purchases] API Key not configured. Running in mock mode.');
+    return;
+  }
 
   try {
-    const apiKey = Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android;
-
-    // デバッグモードではログを出力
+    // デバッグモードの設定（開発時のみ）
     if (__DEV__) {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG);
     }
 
+    // SDK初期化
     await Purchases.configure({
       apiKey,
-      appUserID: userId,
+      appUserID: userId || null, // nullの場合、RevenueCatが匿名IDを生成
     });
 
     isInitialized = true;
-    console.log('RevenueCat initialized');
+    console.log('[Purchases] Initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize RevenueCat:', error);
-    throw error;
+    console.log('[Purchases] Initialization failed:', error);
   }
 }
 
 /**
- * ユーザーIDを設定（ログイン時）
+ * 現在の顧客情報を取得
  */
-export async function loginUser(userId: string): Promise<void> {
+export async function getCustomerInfo(): Promise<CustomerInfo | null> {
   try {
-    await Purchases.logIn(userId);
+    if (!isInitialized) {
+      console.warn('[Purchases] Not initialized');
+      return null;
+    }
+    return await Purchases.getCustomerInfo();
   } catch (error) {
-    console.error('Failed to login user:', error);
-  }
-}
-
-/**
- * ユーザーをログアウト
- */
-export async function logoutUser(): Promise<void> {
-  try {
-    await Purchases.logOut();
-  } catch (error) {
-    console.error('Failed to logout user:', error);
+    console.log('[Purchases] Failed to get customer info:', error);
+    return null;
   }
 }
 
@@ -70,84 +76,105 @@ export async function logoutUser(): Promise<void> {
  */
 export async function checkPremiumStatus(): Promise<boolean> {
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] !== undefined;
+    const customerInfo = await getCustomerInfo();
+    if (!customerInfo) return false;
+    
+    // entitlementsにpremiumがあればプレミアム
+    return customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
   } catch (error) {
-    console.error('Failed to get customer info:', error);
+    console.log('[Purchases] Failed to check premium status:', error);
     return false;
   }
 }
 
 /**
- * 利用可能なオファリングを取得
+ * 利用可能なオファリング（商品）を取得
  */
-export async function getOfferings() {
+export async function getOfferings(): Promise<PurchasesOffering | null> {
   try {
+    if (!isInitialized) {
+      console.warn('[Purchases] Not initialized');
+      return null;
+    }
+    
     const offerings = await Purchases.getOfferings();
-    return offerings;
+    return offerings.current;
   } catch (error) {
-    console.error('Failed to get offerings:', error);
+    console.log('[Purchases] Failed to get offerings:', error);
     return null;
   }
 }
 
 /**
- * 購入処理
+ * プレミアムを購入
  */
-export async function purchasePremium(): Promise<{
-  success: boolean;
-  customerInfo?: CustomerInfo;
-  error?: string;
-}> {
+export async function purchasePremium(): Promise<{ success: boolean; customerInfo?: CustomerInfo }> {
   try {
-    const offerings = await Purchases.getOfferings();
-    const premiumPackage = offerings.current?.availablePackages[0];
+    if (!isInitialized) {
+      throw new Error('Purchases not initialized');
+    }
 
+    const offerings = await Purchases.getOfferings();
+    const currentOffering = offerings.current;
+    
+    if (!currentOffering) {
+      throw new Error('No offerings available');
+    }
+
+    // 最初の利用可能なパッケージを購入（通常は1つのみ）
+    const premiumPackage = currentOffering.availablePackages[0];
+    
     if (!premiumPackage) {
-      return { success: false, error: 'Package not found' };
+      throw new Error('No packages available');
     }
 
     const { customerInfo } = await Purchases.purchasePackage(premiumPackage);
-
-    if (customerInfo.entitlements.active[PREMIUM_ENTITLEMENT]) {
-      return { success: true, customerInfo };
-    }
-
-    return { success: false, error: 'Purchase completed but entitlement not active' };
-  } catch (error: unknown) {
-    // ユーザーキャンセルは エラーとして扱わない
-    if (error && typeof error === 'object' && 'userCancelled' in error && (error as { userCancelled: boolean }).userCancelled) {
+    
+    // 購入成功後、プレミアムが有効か確認
+    const isPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    
+    return { success: isPremium, customerInfo };
+  } catch (error: any) {
+    // ユーザーがキャンセルした場合
+    if (error.userCancelled) {
       return { success: false };
     }
-    console.error('Purchase failed:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+    
+    console.log('[Purchases] Purchase failed:', error);
+    throw error;
   }
 }
 
 /**
- * 購入復元
+ * 購入を復元
  */
-export async function restorePurchases(): Promise<{
-  success: boolean;
-  customerInfo?: CustomerInfo;
-  error?: string;
-}> {
+export async function restorePurchases(): Promise<{ success: boolean; isPremium: boolean; customerInfo?: CustomerInfo }> {
   try {
-    const customerInfo = await Purchases.restorePurchases();
-
-    if (customerInfo.entitlements.active[PREMIUM_ENTITLEMENT]) {
-      return { success: true, customerInfo };
+    if (!isInitialized) {
+      throw new Error('Purchases not initialized');
     }
 
-    return { success: false };
+    const customerInfo = await Purchases.restorePurchases();
+    const isPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    
+    return { success: true, isPremium, customerInfo };
   } catch (error) {
-    console.error('Restore failed:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+    console.log('[Purchases] Restore failed:', error);
+    throw error;
   }
+}
+
+/**
+ * SDKが初期化されているか確認
+ */
+export function isPurchasesInitialized(): boolean {
+  return isInitialized;
+}
+
+/**
+ * API Keyが設定されているか確認
+ */
+export function hasApiKey(): boolean {
+  const apiKey = Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android;
+  return !!apiKey;
 }
