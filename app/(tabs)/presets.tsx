@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DEFAULT_PRESETS } from '@/constants';
+import { DEFAULT_PRESETS, FREE_PLAN_LIMITS } from '@/constants';
 import { useDeletePreset } from '@/hooks/usePresetMutations';
 import { useCustomPresets, usePresetLimit } from '@/hooks/usePresets';
 import { usePremiumStatus } from '@/hooks/usePurchase';
@@ -23,14 +23,19 @@ export default function PresetsScreen() {
   const insets = useSafeAreaInsets();
   const { isPremium } = usePremiumStatus();
   const { data: customPresets = [] } = useCustomPresets();
-  const { canCreate, current, limit } = usePresetLimit();
+  const { data: presetLimit } = usePresetLimit();
   const deletePresetMutation = useDeletePreset();
+
+  // プリセット上限情報（データがない場合はデフォルト値を使用）
+  const canCreate = presetLimit?.can_create ?? true;
+  const currentCount = presetLimit?.current_count ?? customPresets.length;
+  const maxCount = presetLimit?.max_count ?? FREE_PLAN_LIMITS.MAX_CUSTOM_PRESETS;
 
   const handleCreatePreset = () => {
     if (!canCreate && !isPremium) {
       Alert.alert(
         'プリセット上限',
-        `無料プランでは${limit}個までです。\nプレミアムにアップグレードして無制限に！`,
+        `無料プランでは${maxCount}個までです。\nプレミアムにアップグレードして無制限に！`,
         [
           { text: 'キャンセル', style: 'cancel' },
           { text: 'プレミアムを見る', onPress: () => router.push('/premium') },
@@ -97,7 +102,7 @@ export default function PresetsScreen() {
               {!isPremium && (
                 <View style={styles.freeBadge}>
                   <Ionicons name="lock-open" size={10} color="#050505" />
-                  <Text style={styles.freeBadgeText}>無料 {current}/{limit}</Text>
+                  <Text style={styles.freeBadgeText}>無料 {currentCount}/{maxCount}</Text>
                 </View>
               )}
             </View>
