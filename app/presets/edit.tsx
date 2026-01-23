@@ -90,7 +90,12 @@ export default function PresetEditScreen() {
       router.back();
     } catch (error) {
       console.error('Preset save error:', error);
-      Alert.alert('エラー', '保存に失敗しました');
+      // エラーメッセージをユーザーにわかりやすく表示
+      if (error instanceof Error && error.message === 'PRESET_NAME_DUPLICATE') {
+        Alert.alert('エラー', 'この名前のプリセットは既に存在します。\n別の名前を入力してください。');
+      } else {
+        Alert.alert('エラー', '保存に失敗しました');
+      }
     }
   }, [name, bpm, backRatio, forwardRatio, soundType, isFavorite, isEditing, id, createPresetMutation, updatePresetMutation]);
 
