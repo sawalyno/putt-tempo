@@ -1,5 +1,6 @@
 // hooks/useMetronome.ts
 
+import { APP_CONFIG } from '@/constants';
 import { soundPlayer } from '@/lib/soundPlayer';
 import { vibrationPlayer } from '@/lib/vibrationPlayer';
 import { MetronomePhase, OutputMode, SoundType } from '@/types';
@@ -28,7 +29,7 @@ export function useMetronome(options: UseMetronomeOptions) {
   const phaseRef = useRef<MetronomePhase>('address'); // 3フェーズ + interval
 
   // タイミング計算
-  // address: 瞬間（音のみ、次のフェーズまでの待機時間は短め）
+  // address: プロのルーティンに基づく固定時間（1000ms）
   // takeBack: backRatioに基づく時間
   // impact: forwardRatioに基づく時間
   // interval: ユーザー設定のインターバル時間
@@ -37,7 +38,7 @@ export function useMetronome(options: UseMetronomeOptions) {
     const totalRatio = backRatio + forwardRatio;
     const takeBackDuration = cycleDuration * (backRatio / totalRatio);
     const impactDuration = cycleDuration * (forwardRatio / totalRatio);
-    const addressDuration = 100; // アドレスは短い待機（100ms）
+    const addressDuration = APP_CONFIG.ADDRESS_DURATION; // アドレス→テイクバックの間隔（固定）
     const intervalDuration = interval * 1000; // 秒をmsに変換
 
     return { 

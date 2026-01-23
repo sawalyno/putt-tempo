@@ -12,6 +12,8 @@ export const APP_CONFIG = {
   MIN_INTERVAL: 1, // 秒
   MAX_INTERVAL: 10, // 秒
   DEFAULT_INTERVAL: 3, // 秒
+  // アドレスからテイクバックまでの間隔（固定値）
+  ADDRESS_DURATION: 1000, // ms - プロのパッティングルーティンに基づく
 } as const;
 
 export const FREE_PLAN_LIMITS = {
