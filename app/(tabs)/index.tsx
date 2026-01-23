@@ -13,6 +13,7 @@ import { useMetronomeSession } from '@/hooks/useMetronomeSession';
 import { useAllPresets, usePreset } from '@/hooks/usePresets';
 import { usePremiumStatus } from '@/hooks/usePurchase';
 import { useSavePracticeSession } from '@/hooks/usePracticeStats';
+import { useSoundPlayer } from '@/hooks/useSoundPlayer';
 import { OutputMode, Preset } from '@/types';
 
 export default function HomeScreen() {
@@ -20,6 +21,9 @@ export default function HomeScreen() {
   const { isPremium } = usePremiumStatus();
   const { data: allPresets = [] } = useAllPresets();
   const { saveSession } = useSavePracticeSession();
+  
+  // サウンドプレイヤーの初期化
+  useSoundPlayer();
 
   // 選択中のプリセット
   const [selectedPresetId, setSelectedPresetId] = useState<string>(
