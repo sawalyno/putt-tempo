@@ -1,7 +1,7 @@
 // components/Pendulum.tsx - 水平スライダー型アニメーション（React Native Animated API使用）
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
+import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
 
 interface PendulumProps {
   isPlaying: boolean;

@@ -1,9 +1,9 @@
 // hooks/useMetronome.ts
 
-import { useState, useRef, useCallback, useEffect } from 'react';
 import { soundPlayer } from '@/lib/soundPlayer';
 import { vibrationPlayer } from '@/lib/vibrationPlayer';
-import { SoundType, OutputMode } from '@/types';
+import { OutputMode, SoundType } from '@/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseMetronomeOptions {
   bpm: number;

@@ -1,10 +1,10 @@
 // app/(tabs)/stats.tsx - 統計画面（mockデザイン準拠）
 
-import { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePracticeStats } from '@/hooks/usePracticeStats';
 import { usePremiumStatus } from '@/hooks/usePurchase';

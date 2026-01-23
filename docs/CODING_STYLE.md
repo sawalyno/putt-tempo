@@ -13,7 +13,7 @@
 | 型システム | TypeScript Strict | 厳密な型チェック |
 | 状態管理 | React Query | @tanstack/react-query |
 | バックエンド | Supabase | 認証、データベース、RPC |
-| アニメーション | React Native Reanimated 3 | 推奨 |
+| アニメーション | React Native Animated / Reanimated | 用途に応じて選択（後述） |
 
 ---
 
@@ -262,6 +262,134 @@ const adUnitId = __DEV__
 
 ---
 
+## アニメーション実装の注意事項
+
+### React Native Reanimated vs 標準 Animated API
+
+| 状況 | 推奨API | 理由 |
+|------|---------|------|
+| 単純なアニメーション（フェード、スケール等） | 標準 Animated API | 安定性が高い |
+| ジェスチャー連携 | Reanimated | ネイティブスレッドで動作 |
+| 複雑なタイミング制御で問題発生時 | 標準 Animated API | フォールバック先として |
+
+### Reanimated使用時の禁止事項
+
+**モジュールトップレベルでのEasing使用禁止**:
+
+```typescript
+// ❌ NG: モジュール読み込み時にReanimatedが未初期化でエラー
+import { Easing } from 'react-native-reanimated';
+
+export const fadeConfig = {
+  duration: 300,
+  easing: Easing.inOut(Easing.ease),  // ← ここでクラッシュ
+};
+
+// ✅ OK: 使用箇所で直接インポート・使用
+export const fadeConfig = {
+  duration: 300,
+  // easing は使用箇所で設定
+};
+
+// コンポーネント内で
+import { Easing, withTiming } from 'react-native-reanimated';
+position.value = withTiming(0, { 
+  duration: fadeConfig.duration,
+  easing: Easing.inOut(Easing.ease) 
+});
+```
+
+### 標準 Animated API の使用例
+
+Reanimatedで問題が発生する場合のフォールバック:
+
+```typescript
+import { Animated } from 'react-native';
+
+const position = useRef(new Animated.Value(0)).current;
+
+useEffect(() => {
+  Animated.timing(position, {
+    toValue: targetValue,
+    duration: 300,
+    useNativeDriver: true,  // パフォーマンスのため必須
+  }).start();
+}, [targetValue]);
+```
+
+---
+
+## Hooks実装のアンチパターン
+
+### useCallback内のローカル変数問題
+
+**問題**: `useCallback`内のローカル変数は、関数再作成時にリセットされる
+
+```typescript
+// ❌ NG: isBackは関数再作成のたびにtrueにリセット
+const runMetronome = useCallback(() => {
+  let isBack = true;  // ← 毎回リセットされる
+  
+  const tick = () => {
+    const phase = isBack ? 'back' : 'forward';
+    isBack = !isBack;
+    setTimeout(tick, duration);
+  };
+  tick();
+}, [dependencies]);  // dependenciesが変わるとisBackがリセット
+
+// ✅ OK: useRefで関数再作成をまたいで状態を保持
+const isBackRef = useRef(true);
+
+const runMetronome = useCallback(() => {
+  const tick = () => {
+    const phase = isBackRef.current ? 'back' : 'forward';
+    isBackRef.current = !isBackRef.current;
+    setTimeout(tick, duration);
+  };
+  tick();
+}, [dependencies]);
+```
+
+### useEffectの無限ループ問題
+
+**問題**: 依存配列に関数を含めると、状態更新→再レンダリング→関数再作成→useEffect発火→状態更新...の無限ループが発生
+
+```typescript
+// ❌ NG: runMetronomeが依存配列に含まれ、setCurrentPhaseで再レンダリング→無限ループ
+const runMetronome = useCallback(() => {
+  setCurrentPhase(phase);  // ← 状態更新でコンポーネント再レンダリング
+}, [playFeedback, onTick]);  // ← これらが変わるとrunMetronome再作成
+
+useEffect(() => {
+  if (isPlaying) {
+    runMetronome();  // ← 毎回呼ばれて無限ループ
+  }
+}, [runMetronome]);  // ← runMetronomeが依存配列にある
+
+// ✅ OK: 関数を依存配列から除外、必要な値のみ依存
+useEffect(() => {
+  if (isPlayingRef.current) {
+    // インラインで処理を記述
+    const tick = () => { /* ... */ };
+    tick();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [bpm, backRatio, forwardRatio]);  // 値のみ依存
+```
+
+### useRefを使うべき場面
+
+| 場面 | useState | useRef |
+|------|----------|--------|
+| UIに反映する状態 | ✅ | ❌ |
+| 再レンダリング不要な内部状態 | ❌ | ✅ |
+| useCallback内で保持する変数 | ❌ | ✅ |
+| タイマーID、インターバルID | ❌ | ✅ |
+| 前回の値との比較用 | ❌ | ✅ |
+
+---
+
 ## リリース時の注意事項
 
 ### versionCodeの更新（必須）
@@ -282,6 +410,278 @@ android: {
 | version | ユーザーに表示されるバージョン（例: "1.0.1"） |
 
 **エラー例**: 「バージョン コード X はすでに使用されています」→ versionCodeを更新していない
+
+---
+
+## UI実装の優先順序（重要）
+
+UI実装時は**必ず以下の順序で参照**すること：
+
+| 優先度 | 参照元 | 用途 |
+|--------|--------|------|
+| 1位 | `docs/mock/*.html` | 最も正確なデザイン仕様。カラー、フォント、スペーシング、エフェクトすべてをここから取得 |
+| 2位 | `docs/STITCH_PROMPT.md` | デザインプロンプト。mockがない場合の参照 |
+| 3位 | `docs/tasks/taskXX.md` | ASCIIワイヤーフレーム。**構造の概要のみ**。詳細はmockを優先 |
+
+> ⚠️ **禁止事項**: タスクファイルのASCIIワイヤーフレームだけでUI実装を進めてはいけない
+
+---
+
+## Supabaseコーディング規約
+
+### RPC関数の命名規則
+
+- スネークケース使用: `initialize_user`, `save_practice_session`
+- 接頭辞パターン: 
+  - `get_*` - 取得系
+  - `save_*` - 保存系
+  - `check_*` - 確認系
+  - `upgrade_*` - アップグレード系
+
+### `.maybeSingle()` vs `.single()` の使い分け
+
+```typescript
+// ❌ NG: レコードが存在しない可能性がある場合に.single()を使用
+const { data } = await supabase
+  .from('subscriptions')
+  .select()
+  .eq('user_id', userId)
+  .single();  // ← レコードがないとエラー
+
+// ✅ OK: 新規ユーザーなどレコードがない可能性がある場合
+const { data } = await supabase
+  .from('subscriptions')
+  .select()
+  .eq('user_id', userId)
+  .maybeSingle();  // ← レコードがなくてもnullを返す（エラーにならない）
+```
+
+| メソッド | 結果が0件の場合 | 使用場面 |
+|----------|-----------------|----------|
+| `.single()` | エラー発生 | 必ず1件存在する場合 |
+| `.maybeSingle()` | `null`を返す | 0件または1件の場合 |
+
+---
+
+## React Native Reanimated の注意事項
+
+### `transformOrigin` の手動計算
+
+React Native Reanimatedでは`transformOrigin`が直接サポートされていないため、回転の支点を変更したい場合は手動で計算する必要がある：
+
+```typescript
+// 振り子アニメーション例：上端を支点として回転
+const PENDULUM_HEIGHT = 120;
+const MAX_ANGLE = 25;
+
+const animatedStyle = useAnimatedStyle(() => {
+  const angleRad = (rotation.value * Math.PI) / 180;
+  
+  // 支点（上端中央）からの相対位置を計算
+  const translateX = Math.sin(angleRad) * (PENDULUM_HEIGHT / 2);
+  const translateY = (1 - Math.cos(angleRad)) * (PENDULUM_HEIGHT / 2);
+  
+  return {
+    transform: [
+      { translateX },
+      { translateY },
+      { rotate: `${rotation.value}deg` },
+    ],
+  };
+});
+```
+
+**ポイント**:
+- `translateX`と`translateY`で回転前に位置を補正
+- 三角関数で支点からの相対移動量を計算
+- この順序でtransformを適用: translateX → translateY → rotate
+
+### babel.config.js への追加（必須）
+
+```javascript
+// babel.config.js
+module.exports = function(api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    plugins: ['react-native-reanimated/plugin'],  // ← 必須
+  };
+};
+```
+
+---
+
+## アセットファイルの安全なロード
+
+### サウンドファイルが存在しない場合のフォールバック
+
+```typescript
+// lib/soundPlayer.ts
+const SOUND_FILES: { [key: string]: any } = {
+  click: require('@/assets/sounds/click.mp3'),
+  // ... other sounds
+};
+
+export class SoundPlayer {
+  async loadSound(soundId: string): Promise<void> {
+    const file = SOUND_FILES[soundId];
+    if (!file) {
+      console.warn(`Sound file not found: ${soundId}`);
+      return;  // エラーにせず静かに失敗
+    }
+    // ... ロード処理
+  }
+}
+```
+
+**原則**: 
+- アセットが存在しない場合はクラッシュさせない
+- 開発中は`console.warn`で通知
+- 本番では静かに失敗してUXを維持
+
+---
+
+## 広告SDK可用性の堅牢な処理
+
+AdMob SDKが利用できない場合（Expo Go、初期化失敗）のフォールバック：
+
+```typescript
+// components/ads/BannerAd.tsx
+const [adsAvailable, setAdsAvailable] = useState(false);
+const [adLoadFailed, setAdLoadFailed] = useState(false);
+
+useEffect(() => {
+  // SDKが利用可能かチェック
+  if (!isExpoGo && GoogleBannerAd) {
+    setAdsAvailable(true);
+  }
+}, []);
+
+if (!adsAvailable || adLoadFailed) {
+  return <MockBannerAd />;  // フォールバックUI
+}
+
+return (
+  <GoogleBannerAd
+    onAdFailedToLoad={() => setAdLoadFailed(true)}
+    // ...
+  />
+);
+```
+
+---
+
+## 定数定義の規約
+
+### ID命名規則
+
+```typescript
+// ✅ 推奨: ケバブケースでカテゴリ-名前
+const DEFAULT_PRESETS = [
+  { id: 'default-standard', name: 'スタンダード' },
+  { id: 'default-slow', name: 'ロングパット' },
+  { id: 'default-fast', name: 'ショートパット' },
+];
+
+const SOUND_DEFINITIONS = [
+  { id: 'click', name: 'クリック' },
+  { id: 'electronic', name: 'エレクトロニック' },
+];
+```
+
+### 一貫したプロパティ名の使用
+
+```typescript
+// ❌ NG: 同じ概念に異なるプロパティ名
+SOUND_DEFINITIONS.map(sound => sound.type)  // type?
+<Text key={sound.type}>{sound.name}</Text>  // type?
+
+// ✅ OK: 一貫してidを使用
+SOUND_DEFINITIONS.map(sound => sound.id)
+<Text key={sound.id}>{sound.name}</Text>
+```
+
+**確認事項**: 型定義（`types/index.ts`）とコンポーネントで同じプロパティ名を使用しているか
+
+---
+
+## 現実的なデフォルト値の設定
+
+### パッティングテンポの例
+
+```typescript
+// constants/presets.ts
+// 実際のパッティングテンポに基づいた設定
+// - ロングパット（3m+）: 約2秒サイクル → 30 BPM
+// - ミドルパット（1-3m）: 約1.5秒サイクル → 40 BPM
+// - ショートパット（1m以下）: 約1.2秒サイクル → 50 BPM
+
+export const DEFAULT_PRESETS: DefaultPreset[] = [
+  { id: 'default-standard', bpm: 40, description: 'ミドルパット（1-3m）' },
+  { id: 'default-slow', bpm: 30, description: 'ロングパット（3m以上）' },
+  { id: 'default-fast', bpm: 50, description: 'ショートパット（1m以下）' },
+];
+```
+
+**原則**: 
+- 適当な値ではなく実際のユースケースに基づいた値を設定
+- デフォルト値の根拠をコメントで記載
+
+---
+
+## ヘッダースタイリングの一貫性
+
+全画面で統一されたヘッダースタイルを使用：
+
+```typescript
+// ✅ 推奨: シンプルなヘッダー構造
+<View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+  <Text style={styles.headerTitle}>画面タイトル</Text>
+</View>
+
+// ❌ 非推奨: 画面ごとに異なるヘッダー構造
+<BlurView>
+  <SafeAreaView>
+    <View style={styles.header}>
+      {/* ... */}
+    </View>
+  </SafeAreaView>
+</BlurView>
+```
+
+---
+
+## メトロノームロジックの実装パターン
+
+### タイミング計算
+
+```typescript
+// サイクル時間の計算
+const cycleDuration = (60 / bpm) * 1000;  // ms
+
+// バック/フォワード時間の比率計算
+const totalRatio = backRatio + forwardRatio;
+const backDuration = cycleDuration * (backRatio / totalRatio);
+const forwardDuration = cycleDuration * (forwardRatio / totalRatio);
+```
+
+### フェーズ管理
+
+```typescript
+// useRefでフェーズ状態を管理（再レンダリング回避）
+const phaseRef = useRef<'back' | 'forward'>('back');
+const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+const tick = () => {
+  const isBack = phaseRef.current === 'back';
+  const duration = isBack ? backDuration : forwardDuration;
+  
+  playFeedback(phaseRef.current);
+  phaseRef.current = isBack ? 'forward' : 'back';
+  
+  timeoutRef.current = setTimeout(tick, duration);
+};
+```
 
 ---
 

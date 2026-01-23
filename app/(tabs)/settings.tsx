@@ -1,10 +1,10 @@
 // app/(tabs)/settings.tsx - 設定画面（mockデザイン準拠）
 
-import { View, Text, ScrollView, Pressable, StyleSheet, Linking, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremiumStatus, usePurchase } from '@/hooks/usePurchase';
