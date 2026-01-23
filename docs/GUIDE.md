@@ -527,138 +527,122 @@ Stitchのデザインに合わせて修正してください。
 
 ## 💳 STEP 9.5：課金（RevenueCat）を設定する
 
-アプリ内課金を実装する場合、RevenueCatを使用します。
+アプリ内課金を実装する場合、RevenueCatを使用します（ストア課金のレシート検証・状態管理を肩代わりしてくれます）。
 
-### 9.5-1. RevenueCatアカウント作成
+> 重要：**Expo Go では RevenueCat（`react-native-purchases`）は動きません。**  
+> 課金の動作確認は **Development Build / TestFlight / 内部テスト** が必要です。
 
-1. https://app.revenuecat.com にアクセス
-2. **Sign Up** をクリックしてアカウント作成
-3. メールアドレスで認証を完了
+このSTEPは「買い切り（Non‑Consumable / One‑time purchase）」を前提にしています。
 
-### 9.5-2. プロジェクト作成
+### 9.5-1. RevenueCatアカウント作成 → プロジェクト作成
 
-1. RevenueCatダッシュボードにログイン
-2. **+ New Project** をクリック
-3. プロジェクト名を入力（例: `My App`）
-4. **Create Project** をクリック
+1. `https://app.revenuecat.com` にアクセスしてアカウント作成
+2. **New Project** でプロジェクト作成
 
-### 9.5-3. アプリを追加
+### 9.5-2. RevenueCatにアプリを追加（iOS / Android）
 
-**iOSアプリ:**
-1. **+ Add App** → **Platform**: iOS
-2. **Bundle ID**: App Store Connectで設定したBundle IDを入力
-3. **Create App**
+RevenueCatのプロジェクト内で **Apps & providers**（または Apps）から追加します。
 
-**Androidアプリ:**
-1. **+ Add App** → **Platform**: Android
-2. **Package Name**: Google Play Consoleで設定したPackage Nameを入力
-3. **Create App**
+- **iOS**: Bundle ID を入力して追加
+- **Android**: Package Name を入力して追加
 
-### 9.5-4. Entitlement（権利）の作成
+### 9.5-3. つまずきポイント：ストア連携（資格情報）を先に設定する
 
-1. **Entitlements** タブ → **+ New Entitlement**
-2. **Identifier**: `premium`（または任意の識別子）
-3. **Create**
+RevenueCatは「ストアから商品情報を取り込む」ために、**サーバー側の資格情報連携**が必要です。ここが未設定だと、Products/Offeringsが作れず手順が止まります。
 
-### 9.5-5. ストアで商品を登録
+#### iOS（App Store Connect 連携）
 
-**App Store Connect（iOS）:**
-1. アプリ → **機能** → **アプリ内課金** → **+**
-2. **非消耗型**（買い切り）または **自動更新サブスクリプション** を選択
-3. 商品ID、価格、説明を設定
+1. App Store Connect で **App Store Connect API Key** を作成（`.p8` を取得）
+2. RevenueCat側の iOSアプリ設定で **App Store Connect API Key** を登録（Issuer ID / Key ID / `.p8`）
 
-**Google Play Console（Android）:**
+> StoreKit2を使う構成でも、RevenueCat側の「App Store Connect API Key連携」は必要です（商品インポート目的）。
+
+#### Android（Google Play 連携）
+
+1. Google Cloud / Google Play Console で **サービスアカウント（JSON）** を用意
+2. RevenueCat側の Androidアプリ設定で **Play service credentials** を登録
+
+> 注意：Google側の権限反映に時間がかかることがあります（数時間〜最大で丸一日程度）。
+
+### 9.5-4. ストアで商品（SKU）を作成
+
+#### iOS（App Store Connect）
+
+1. アプリ → **機能** → **アプリ内課金**
+2. **非消耗型（Non‑Consumable）** を作成
+3. 例：
+   - **Product ID**: `putt_tempo_premium`
+   - **価格**: ¥480
+
+#### Android（Google Play Console）
+
 1. アプリ → **収益化** → **商品** → **アプリ内商品**
-2. **商品を作成** → 商品タイプを選択
-3. 商品ID、価格、説明を設定
+2. **1回限りの商品（One‑time product）** を作成
+3. 例：
+   - **Product ID**: `putt_tempo_premium`
+   - **価格**: ¥480
 
-### 9.5-6. RevenueCatでProductを連携
+### 9.5-5. RevenueCatで商品を取り込む（Import）→ Entitlement/Offeringに紐付ける
 
-1. **Products** タブ → アプリを選択
-2. **+ Add Product**
-3. **Product Identifier**: ストアで作成した商品IDを入力
-4. **Entitlement**: 作成したEntitlementを選択
-5. **Add Product**
+1. RevenueCatで **Entitlements** を作成
+   - **Identifier**: `premium`（アプリ側コードと一致させる）
+2. RevenueCatで **Products** を作成/インポート
+   - ストア連携が正しくできていれば **ストアから商品をインポート**できます
+3. RevenueCatで **Offerings** を作成し、Packageを追加
+   - Offering: `default`（例）
+   - Package: **Lifetime**（買い切りの場合、Lifetimeパッケージに紐付けるのが分かりやすい）
+4. Offeringを **Current/Active** に設定
 
-### 9.5-7. Offering（オファリング）の作成
+### 9.5-6. API Key（Public SDK Key）を取得
 
-1. **Offerings** タブ → **+ New Offering**
-2. **Identifier**: `default`
-3. **Packages** → **+ Add Package**
-4. 作成したProductを選択
-5. **Save** → Offeringを **Active** に設定
+RevenueCat → **Project Settings / API Keys** から、各プラットフォームの **Public SDK Key** を取得します。
 
-### 9.5-8. API Keyの取得
+- iOS: `appl_...`
+- Android: `goog_...`
 
-1. **Settings** → **API Keys**
-2. **Public API Keys** セクションで以下をコピー:
-   - **iOS API Key** (例: `appl_xxxxxxxxxxxxx`)
-   - **Android API Key** (例: `goog_xxxxxxxxxxxxx`)
+### 9.5-7. Expoの環境変数を設定（このリポジトリの実装に合わせる）
 
-### 9.5-9. 環境変数に設定
-
-`.env` ファイルに追加:
+`.env` に追加してから、**開発サーバーを再起動**してください。
 
 ```bash
 EXPO_PUBLIC_REVENUECAT_IOS_KEY=appl_xxxxxxxxxxxxx
 EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_xxxxxxxxxxxxx
 ```
 
-### 9.5-10. テスト購入の設定
+> 重要：課金の検証は **Development Build** で行ってください（Expo Go不可）。
 
-**iOS（Sandbox テスター）:**
-1. App Store Connect → **ユーザーとアクセス** → **サンドボックステスター**
-2. テスト用アカウントを作成
-3. デバイスで **設定** → **App Store** → **サンドボックスアカウント** でログイン
+### 9.5-8. テスト購入の設定（最短で動かすコツ）
 
-**Android（ライセンステスト）:**
-1. Google Play Console → **設定** → **ライセンステスト**
-2. テスト用のGmailアカウントを追加
+- **iOS**: Sandbox テスターを作成し、TestFlight/実機で購入テスト
+- **Android**: 内部テスト（Internal testing）に配布し、ライセンステスターで購入テスト
 
-### 課金実装のコード例
+### 9.5-9. よくある原因（Offeringsがnull / 購入UIが出ない）
+
+- RevenueCat側で **Offerings が Current/Active になっていない**
+- RevenueCat側で **ストア資格情報（iOS: ASC API key / Android: Service Account）が未設定**
+- ストア側で **商品が未アクティブ / 国・価格未設定 / 対象バージョン未配布**
+- **Expo Goで試している**（Development Buildが必要）
+
+### 参考：このリポジトリの実装の読み方（キー参照）
+
+このプロジェクトでは `app.config.ts` の `extra` 経由でキーを読みます（実装: `lib/purchases.ts`）。
 
 ```typescript
-// lib/purchases.ts
-import Purchases from 'react-native-purchases';
-import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const API_KEYS = {
-  ios: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '',
-  android: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '',
-};
-
-export async function initializePurchases() {
-  const apiKey = Platform.OS === 'ios' ? API_KEYS.ios : API_KEYS.android;
-  if (!apiKey) return;
-  
-  await Purchases.configure({ apiKey });
-}
-
-export async function purchasePremium() {
-  const offerings = await Purchases.getOfferings();
-  const pkg = offerings.current?.availablePackages[0];
-  if (!pkg) throw new Error('No packages available');
-  
-  const { customerInfo } = await Purchases.purchasePackage(pkg);
-  return customerInfo.entitlements.active['premium'] !== undefined;
-}
-
-export async function isPremium(): Promise<boolean> {
-  const customerInfo = await Purchases.getCustomerInfo();
-  return customerInfo.entitlements.active['premium'] !== undefined;
-}
+const iosKey = Constants.expoConfig?.extra?.revenueCatIosKey;
+const androidKey = Constants.expoConfig?.extra?.revenueCatAndroidKey;
 ```
 
-### チェックリスト
+### チェックリスト（最低限）
 
-- [ ] RevenueCatアカウント作成
-- [ ] プロジェクト・アプリ追加
-- [ ] Entitlement作成
-- [ ] App Store Connect / Google Play Consoleで商品登録
-- [ ] RevenueCatでProduct連携
-- [ ] Offering作成・有効化
-- [ ] API Key取得・環境変数設定
-- [ ] テスト購入確認
+- [ ] iOS/AndroidアプリをRevenueCatに追加した
+- [ ] **ストア連携（資格情報）** をRevenueCatに登録した
+- [ ] ストア側で商品（SKU）を作成・有効化した
+- [ ] RevenueCatでEntitlement `premium` を作成した
+- [ ] RevenueCatでOfferingを作成し、**Current/Active** にした
+- [ ] Public SDK Key を `.env` に設定した
+- [ ] **Development Build** で購入テストした
 
 ---
 
