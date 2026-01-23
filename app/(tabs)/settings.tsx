@@ -10,7 +10,7 @@ import { usePremiumStatus, usePurchase } from '@/hooks/usePurchase';
 
 export default function SettingsScreen() {
   const { isPremium } = usePremiumStatus();
-  const { restore: restorePurchases } = usePurchase();
+  const { restore: restorePurchases, resetToFree } = usePurchase();
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || 
@@ -73,6 +73,39 @@ export default function SettingsScreen() {
                 <Text style={styles.menuItemAction}>プレミアムにアップグレード →</Text>
               )}
             </Pressable>
+            {/* 開発用: 無料プランに戻す */}
+            {isPremium && __DEV__ && (
+              <>
+                <View style={styles.menuItemDivider} />
+                <Pressable 
+                  style={styles.menuItem}
+                  onPress={() => {
+                    Alert.alert(
+                      '開発用',
+                      '無料プランに戻しますか？',
+                      [
+                        { text: 'キャンセル', style: 'cancel' },
+                        { 
+                          text: '戻す', 
+                          style: 'destructive',
+                          onPress: async () => {
+                            await resetToFree();
+                            Alert.alert('完了', '無料プランに戻しました');
+                          }
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <View style={styles.menuItemLeft}>
+                    <Ionicons name="refresh" size={20} color="#ef4444" />
+                    <Text style={[styles.menuItemText, { color: '#ef4444' }]}>
+                      無料プランに戻す（DEV）
+                    </Text>
+                  </View>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
 

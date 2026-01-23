@@ -66,11 +66,18 @@ export function usePurchase() {
     }
   }, [checkPremiumStatus, isPremium]);
 
+  // 無料プランに戻す（開発・テスト用）
+  const resetToFree = useCallback(async () => {
+    await saveIsPremium(false);
+    setIsPremiumState(false);
+  }, []);
+
   return {
     isPremium,
     isLoading,
     purchase,
     restore,
+    resetToFree,
     checkPremiumStatus,
   };
 }
