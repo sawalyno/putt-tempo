@@ -1,4 +1,4 @@
-// app/(tabs)/settings.tsx - 設定画面（mockデザイン準拠）
+// app/(tabs)/settings.tsx - 設定画面（ローカル保存版）
 
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
@@ -6,11 +6,9 @@ import { router } from 'expo-router';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/contexts/AuthContext';
 import { usePremiumStatus, usePurchase } from '@/hooks/usePurchase';
 
 export default function SettingsScreen() {
-  const { user, isAnonymous, signOut } = useAuth();
   const { isPremium } = usePremiumStatus();
   const { restore: restorePurchases } = usePurchase();
 
@@ -25,33 +23,6 @@ export default function SettingsScreen() {
     } catch (error) {
       Alert.alert('エラー', '購入の復元に失敗しました');
     }
-  };
-
-  const handleCreateAccount = () => {
-    // TODO: アカウント作成フローへ
-    Alert.alert('準備中', 'アカウント作成機能は準備中です');
-  };
-
-  const handleLogout = () => {
-    Alert.alert(
-      'ログアウト',
-      'ログアウトしますか？',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: 'ログアウト',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              Alert.alert('完了', 'ログアウトしました');
-            } catch (error) {
-              Alert.alert('エラー', 'ログアウトに失敗しました');
-            }
-          },
-        },
-      ]
-    );
   };
 
   const openLink = (url: string) => {
@@ -79,37 +50,6 @@ export default function SettingsScreen() {
       >
         {/* ページタイトル */}
         <Text style={styles.pageTitle}>設定</Text>
-
-        {/* アカウントセクション */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>アカウント</Text>
-          <View style={styles.card}>
-            <View style={styles.accountItem}>
-              <View style={styles.accountInfo}>
-                <View style={styles.accountAvatar}>
-                  <Ionicons name="person" size={24} color="#2a73ea" />
-                </View>
-                <View style={styles.accountDetails}>
-                  <Text style={styles.accountName}>
-                    👤 {isAnonymous ? 'ゲストユーザー' : 'ログイン中'}
-                  </Text>
-                  <Text style={styles.accountDescription}>
-                    {isAnonymous ? 'データは同期されていません' : user?.email || 'データ同期中'}
-                  </Text>
-                </View>
-              </View>
-              {isAnonymous ? (
-                <Pressable onPress={handleCreateAccount}>
-                  <Text style={styles.accountAction}>アカウントを作成 →</Text>
-                </Pressable>
-              ) : (
-                <Pressable onPress={handleLogout} style={styles.logoutButton}>
-                  <Text style={styles.logoutButtonText}>ログアウト</Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </View>
 
         {/* プランセクション */}
         <View style={styles.section}>
@@ -243,60 +183,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
     overflow: 'hidden',
-  },
-  accountItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  accountInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    flex: 1,
-  },
-  accountAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(42, 115, 234, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accountDetails: {
-    flex: 1,
-  },
-  accountName: {
-    fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
-    color: '#ffffff',
-  },
-  accountDescription: {
-    fontSize: 12,
-    fontFamily: 'Manrope_400Regular',
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  accountAction: {
-    fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
-    color: '#2a73ea',
-  },
-  logoutButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  logoutButtonText: {
-    fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
-    color: '#ef4444',
   },
   menuItem: {
     flexDirection: 'row',

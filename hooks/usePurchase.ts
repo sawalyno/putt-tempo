@@ -1,40 +1,25 @@
-// hooks/usePurchase.ts
+// hooks/usePurchase.ts - ローカルベースの課金管理
 
 import { useState, useCallback, useEffect } from 'react';
-import { Platform } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { getIsPremium, setIsPremium as saveIsPremium } from '@/lib/storage';
 
 // RevenueCat SDKが追加された後に有効化
 // import Purchases, { CustomerInfo } from 'react-native-purchases';
 
 export function usePurchase() {
-  const { user } = useAuth();
-  const [isPremium, setIsPremium] = useState(false);
+  const [isPremium, setIsPremiumState] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // プレミアム状態を確認（Supabaseから）
+  // プレミアム状態を確認（ローカルストレージから）
   const checkPremiumStatus = useCallback(async () => {
-    if (!user) {
-      setIsPremium(false);
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('plan')
-        .eq('user_id', user.id)
-        .maybeSingle(); // 行がない場合もエラーにしない
-
-      if (error) throw error;
-      // データがない場合は無料プラン
-      setIsPremium(data?.plan === 'premium');
+      const premium = await getIsPremium();
+      setIsPremiumState(premium);
     } catch (error) {
       console.error('Failed to check premium status:', error);
-      setIsPremium(false);
+      setIsPremiumState(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     checkPremiumStatus();
@@ -50,26 +35,17 @@ export function usePurchase() {
       // if (!premiumPackage) throw new Error('Package not found');
       // const { customerInfo } = await Purchases.purchasePackage(premiumPackage);
       
-      // 仮実装: Supabaseに直接記録（テスト用）
-      if (user) {
-        await supabase.rpc('upgrade_subscription', {
-          p_user_id: user.id,
-          p_plan: 'premium',
-          p_platform: Platform.OS,
-          p_store_product_id: 'putt_tempo_premium',
-          p_store_transaction_id: `test_${Date.now()}`,
-        });
-        setIsPremium(true);
-        return true;
-      }
-      return false;
+      // 仮実装: ローカルに保存（テスト用）
+      await saveIsPremium(true);
+      setIsPremiumState(true);
+      return true;
     } catch (error) {
       console.error('Purchase failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
 
   // 復元処理（RevenueCat SDK追加後に実装）
   const restore = useCallback(async () => {
@@ -79,6 +55,7 @@ export function usePurchase() {
       // const { customerInfo } = await Purchases.restorePurchases();
       // const restored = customerInfo.entitlements.active['premium'] !== undefined;
       
+      // 仮実装: 現在の状態を返す
       await checkPremiumStatus();
       return isPremium;
     } catch (error) {

@@ -1,74 +1,60 @@
-// hooks/usePracticeStats.ts
+// hooks/usePracticeStats.ts - ローカルストレージベースの練習統計
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { PracticeStats, SessionData } from '@/types';
-import { APP_CONFIG } from '@/constants';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { calculatePracticeStats, savePracticeSession } from '@/lib/storage';
+import { SessionData } from '@/types';
+import { useCallback } from 'react';
 
-const STATS_QUERY_KEY = 'practice-stats';
+const STATS_QUERY_KEY = 'practice_stats';
 
-export function usePracticeStats() {
-  const { user } = useAuth();
-
+// 練習統計を取得（過去7日間）
+export function usePracticeStats(days: number = 7) {
   return useQuery({
-    queryKey: [STATS_QUERY_KEY, user?.id],
-    queryFn: async (): Promise<PracticeStats> => {
-      if (!user) {
-        return {
-          total_sessions: 0,
-          total_duration_seconds: 0,
-          average_duration_seconds: 0,
-          most_used_preset: null,
-          daily_stats: [],
-          period_days: 7,
-        };
-      }
-
-      const { data, error } = await supabase.rpc('get_practice_stats', {
-        p_user_id: user.id,
-      });
-
-      if (error) throw error;
-      return data as PracticeStats;
+    queryKey: [STATS_QUERY_KEY, days],
+    queryFn: async () => {
+      const stats = await calculatePracticeStats(days);
+      return {
+        total_sessions: stats.totalSessions,
+        total_duration_seconds: stats.totalDurationSeconds,
+        average_duration_seconds: stats.averageDurationSeconds,
+        most_used_preset: stats.mostUsedPreset,
+        daily_stats: stats.dailyStats.map(d => ({
+          date: d.date,
+          duration_seconds: d.durationSeconds,
+          session_count: d.sessionCount,
+        })),
+        period_days: stats.periodDays,
+      };
     },
-    enabled: !!user,
-    staleTime: 1000 * 60 * 5, // 5分
+    staleTime: 1000 * 60, // 1分
   });
 }
 
+// 練習セッションを保存
 export function useSavePracticeSession() {
-  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const saveSession = async (session: SessionData): Promise<boolean> => {
-    if (!user) return false;
-
-    // 最小セッション時間チェック
-    if (session.durationSeconds < APP_CONFIG.MIN_SESSION_DURATION) {
-      console.log('Session too short, not saving');
-      return false;
-    }
-
+  const saveSession = useCallback(async (session: SessionData) => {
     try {
-      const { data, error } = await supabase.rpc('save_practice_session', {
-        p_user_id: user.id,
-        p_preset_id: session.presetId,
-        p_preset_name: session.presetName,
-        p_bpm: session.bpm,
-        p_back_ratio: session.backRatio,
-        p_forward_ratio: session.forwardRatio,
-        p_duration_seconds: session.durationSeconds,
-        p_started_at: session.startedAt.toISOString(),
-        p_ended_at: session.endedAt.toISOString(),
+      await savePracticeSession({
+        presetName: session.presetName,
+        bpm: session.bpm,
+        backRatio: session.backRatio,
+        forwardRatio: session.forwardRatio,
+        durationSeconds: session.durationSeconds,
+        startedAt: session.startedAt.toISOString(),
+        endedAt: session.endedAt.toISOString(),
       });
-
-      if (error) throw error;
-      return data?.success === true;
+      
+      // キャッシュを無効化
+      queryClient.invalidateQueries({ queryKey: [STATS_QUERY_KEY] });
+      
+      return { success: true };
     } catch (error) {
       console.error('Failed to save practice session:', error);
-      return false;
+      return { success: false, error };
     }
-  };
+  }, [queryClient]);
 
   return { saveSession };
 }

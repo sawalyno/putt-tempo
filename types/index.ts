@@ -3,58 +3,6 @@
  */
 
 // ========================================
-// Database Types（Supabaseテーブル対応）
-// ========================================
-
-export interface UserProfile {
-  id: string;
-  display_name: string | null;
-  preferred_sound: SoundType;
-  vibration_enabled: boolean;
-  last_used_preset_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CustomPreset {
-  id: string;
-  user_id: string;
-  name: string;
-  bpm: number;
-  back_ratio: number;
-  forward_ratio: number;
-  sound_type: SoundType;
-  is_favorite: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PracticeSession {
-  id: string;
-  user_id: string;
-  preset_id: string | null;
-  preset_name: string;
-  bpm: number;
-  back_ratio: number;
-  forward_ratio: number;
-  duration_seconds: number;
-  started_at: string;
-  ended_at: string;
-}
-
-export interface Subscription {
-  id: string;
-  user_id: string;
-  plan: PlanType;
-  platform: Platform | null;
-  store_product_id: string | null;
-  store_transaction_id: string | null;
-  purchased_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// ========================================
 // Enum Types
 // ========================================
 
@@ -78,7 +26,7 @@ export type Platform = 'ios' | 'android' | 'web';
 // App Types（アプリ内で使用）
 // ========================================
 
-/** デフォルトプリセット（DBに保存しない） */
+/** デフォルトプリセット */
 export interface DefaultPreset {
   id: string;
   name: string;
@@ -87,6 +35,20 @@ export interface DefaultPreset {
   forwardRatio: number;
   description: string;
   isDefault: true;
+}
+
+/** カスタムプリセット（互換性のためのスネークケースプロパティを含む） */
+export interface CustomPreset {
+  id: string;
+  user_id: string;
+  name: string;
+  bpm: number;
+  back_ratio: number;
+  forward_ratio: number;
+  sound_type: SoundType;
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 /** カスタムプリセット（アプリ内で使用する形式） */
@@ -116,26 +78,14 @@ export type OutputMode = 'sound' | 'vibration' | 'both';
 export type MetronomePhase = 'address' | 'takeBack' | 'impact' | 'interval' | 'idle';
 
 // ========================================
-// RPC Response Types
+// Response Types
 // ========================================
-
-export interface InitializeUserResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
 
 export interface CheckPresetLimitResponse {
   can_create: boolean;
   current_count: number;
   max_count: number;
   plan: PlanType;
-}
-
-export interface SavePracticeSessionResponse {
-  success: boolean;
-  session_id?: string;
-  error?: string;
 }
 
 export interface PracticeStats {
@@ -153,21 +103,11 @@ export interface DailyStat {
   session_count: number;
 }
 
-export interface UpgradeSubscriptionResponse {
-  success: boolean;
-  error?: string;
-}
-
 // ========================================
 // Error Types
 // ========================================
 
 export type ErrorCode =
-  // 認証系
-  | 'AUTH_ANONYMOUS_FAILED'
-  | 'AUTH_EMAIL_EXISTS'
-  | 'AUTH_INVALID_EMAIL'
-  | 'AUTH_LINK_FAILED'
   // プリセット系
   | 'PRESET_LIMIT_REACHED'
   | 'PRESET_NAME_DUPLICATE'
@@ -182,11 +122,7 @@ export type ErrorCode =
   // サブスク系
   | 'SUB_PURCHASE_FAILED'
   | 'SUB_RESTORE_FAILED'
-  | 'SUB_ALREADY_PREMIUM'
-  // 通信系
-  | 'NETWORK_OFFLINE'
-  | 'NETWORK_TIMEOUT'
-  | 'NETWORK_SERVER_ERROR';
+  | 'SUB_ALREADY_PREMIUM';
 
 export interface AppError {
   code: ErrorCode;

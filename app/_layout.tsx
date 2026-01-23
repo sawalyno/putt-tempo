@@ -22,7 +22,6 @@ import {
 
 import '../global.css';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { queryClient } from '@/lib/queryClient';
 
 export {
@@ -90,27 +89,25 @@ function RootLayoutNav() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider value={PuttTempoDarkTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="premium"
-                options={{
-                  headerShown: false,
-                  presentation: 'modal',
-                }}
-              />
-              <Stack.Screen
-                name="presets/edit"
-                options={{
-                  headerShown: false,
-                  presentation: 'modal',
-                }}
-              />
-            </Stack>
-          </ThemeProvider>
-        </AuthProvider>
+        <ThemeProvider value={PuttTempoDarkTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="premium"
+              options={{
+                headerShown: false,
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="presets/edit"
+              options={{
+                headerShown: false,
+                presentation: 'modal',
+              }}
+            />
+          </Stack>
+        </ThemeProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

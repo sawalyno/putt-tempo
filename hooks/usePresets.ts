@@ -1,24 +1,26 @@
-// hooks/usePresets.ts
+// hooks/usePresets.ts - ローカルストレージベースのプリセット管理
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  CustomPreset,
-  DefaultPreset,
-  Preset,
-  AppCustomPreset,
-  CheckPresetLimitResponse,
-} from '@/types';
-import { DEFAULT_PRESETS } from '@/constants';
+import { DEFAULT_PRESETS, FREE_PLAN_LIMITS } from '@/constants';
+import { getCustomPresets, LocalCustomPreset } from '@/lib/storage';
+import { DefaultPreset, AppCustomPreset, Preset } from '@/types';
 
 const PRESETS_QUERY_KEY = 'presets';
 
-// カスタムプリセットをPreset型に変換
-const toAppPreset = (preset: CustomPreset): AppCustomPreset => ({
-  ...preset,
-  backRatio: preset.back_ratio,
-  forwardRatio: preset.forward_ratio,
+// LocalCustomPresetをAppCustomPresetに変換
+const toAppPreset = (preset: LocalCustomPreset): AppCustomPreset => ({
+  id: preset.id,
+  user_id: 'local',
+  name: preset.name,
+  bpm: preset.bpm,
+  back_ratio: preset.backRatio,
+  forward_ratio: preset.forwardRatio,
+  sound_type: preset.soundType as any,
+  is_favorite: false,
+  created_at: preset.createdAt,
+  updated_at: preset.updatedAt,
+  backRatio: preset.backRatio,
+  forwardRatio: preset.forwardRatio,
   isDefault: false,
 });
 
@@ -29,24 +31,12 @@ export function useDefaultPresets(): DefaultPreset[] {
 
 // カスタムプリセットを取得
 export function useCustomPresets() {
-  const { user } = useAuth();
-
   return useQuery({
-    queryKey: [PRESETS_QUERY_KEY, 'custom', user?.id],
+    queryKey: [PRESETS_QUERY_KEY, 'custom'],
     queryFn: async (): Promise<AppCustomPreset[]> => {
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('custom_presets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return (data || []).map(toAppPreset);
+      const localPresets = await getCustomPresets();
+      return localPresets.map(toAppPreset);
     },
-    enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5分
   });
 }
@@ -58,16 +48,9 @@ export function useAllPresets() {
 
   const allPresets: Preset[] = [...defaultPresets, ...customPresets];
 
-  // お気に入りを先頭に
-  const sortedPresets = [...allPresets].sort((a, b) => {
-    const aFav = !a.isDefault && a.is_favorite ? 1 : 0;
-    const bFav = !b.isDefault && b.is_favorite ? 1 : 0;
-    return bFav - aFav;
-  });
-
   return {
     ...query,
-    data: sortedPresets,
+    data: allPresets,
     defaultPresets,
     customPresets,
   };
@@ -84,43 +67,32 @@ export function usePreset(presetId: string | null): Preset | null {
 
 // プリセット上限チェック
 export function usePresetLimit() {
-  const { user } = useAuth();
-
+  const { data: customPresets = [] } = useCustomPresets();
+  
   return useQuery({
-    queryKey: [PRESETS_QUERY_KEY, 'limit', user?.id],
-    queryFn: async (): Promise<CheckPresetLimitResponse> => {
-      if (!user) {
-        return {
-          can_create: false,
-          current_count: 0,
-          max_count: 3,
-          plan: 'free',
-        };
-      }
-
-      const { data, error } = await supabase.rpc('check_preset_limit', {
-        p_user_id: user.id,
-      });
-
-      if (error) throw error;
-      return data as CheckPresetLimitResponse;
+    queryKey: [PRESETS_QUERY_KEY, 'limit'],
+    queryFn: async () => {
+      const currentCount = customPresets.length;
+      const maxCount = FREE_PLAN_LIMITS.MAX_CUSTOM_PRESETS;
+      
+      return {
+        can_create: currentCount < maxCount,
+        current_count: currentCount,
+        max_count: maxCount,
+        plan: 'free' as const,
+      };
     },
-    enabled: !!user,
-    staleTime: 1000 * 60, // 1分
+    staleTime: 0, // 常に最新を取得
   });
 }
 
 // プリセットキャッシュの無効化
 export function useInvalidatePresets() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return () => {
     queryClient.invalidateQueries({
-      queryKey: [PRESETS_QUERY_KEY, 'custom', user?.id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: [PRESETS_QUERY_KEY, 'limit', user?.id],
+      queryKey: [PRESETS_QUERY_KEY],
     });
   };
 }
