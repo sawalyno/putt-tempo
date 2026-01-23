@@ -8,12 +8,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremiumStatus, usePurchase } from '@/hooks/usePurchase';
-import { supabase } from '@/lib/supabase';
 
 export default function SettingsScreen() {
-  const { user, isAnonymous } = useAuth();
+  const { user, isAnonymous, signOut } = useAuth();
   const { isPremium } = usePremiumStatus();
-  const { restorePurchases } = usePurchase();
+  const { restore: restorePurchases } = usePurchase();
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || 
@@ -44,7 +43,8 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await supabase.auth.signOut();
+              await signOut();
+              Alert.alert('完了', 'ログアウトしました');
             } catch (error) {
               Alert.alert('エラー', 'ログアウトに失敗しました');
             }

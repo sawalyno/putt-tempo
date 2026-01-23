@@ -242,6 +242,7 @@ const styles = StyleSheet.create({
   phaseIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     marginBottom: 32,
   },

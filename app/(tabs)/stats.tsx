@@ -100,9 +100,6 @@ export default function StatsScreen() {
               <Text style={styles.chartTitle}>練習時間</Text>
               <Text style={styles.chartSubtitle}>過去7日間 ({dateRange})</Text>
             </View>
-            <View style={styles.goalBadge}>
-              <Text style={styles.goalBadgeText}>週目標: 80%</Text>
-            </View>
           </View>
 
           <View style={styles.chartCard}>
@@ -303,17 +300,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     color: 'rgba(255,255,255,0.4)',
     marginTop: 2,
-  },
-  goalBadge: {
-    backgroundColor: 'rgba(42, 115, 234, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  goalBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
-    color: '#2a73ea',
   },
   chartCard: {
     backgroundColor: '#121212',

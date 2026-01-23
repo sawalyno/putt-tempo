@@ -9,7 +9,6 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Switch,
     Text,
     TextInput,
     View,
@@ -42,7 +41,6 @@ export default function PresetEditScreen() {
   const [backRatio, setBackRatio] = useState(2);
   const [forwardRatio, setForwardRatio] = useState(1);
   const [soundType, setSoundType] = useState<SoundType>('click');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isSoundPickerOpen, setIsSoundPickerOpen] = useState(false);
 
   // 編集モード時に既存データをロード
@@ -55,7 +53,6 @@ export default function PresetEditScreen() {
         setBackRatio(preset.back_ratio);
         setForwardRatio(preset.forward_ratio);
         setSoundType(preset.sound_type);
-        setIsFavorite(preset.is_favorite);
       }
     }
   }, [isEditing, id, customPresets]);
@@ -75,7 +72,6 @@ export default function PresetEditScreen() {
           backRatio,
           forwardRatio,
           soundType,
-          isFavorite,
         });
       } else {
         await createPresetMutation.mutateAsync({
@@ -84,7 +80,6 @@ export default function PresetEditScreen() {
           backRatio,
           forwardRatio,
           soundType,
-          isFavorite,
         });
       }
       router.back();
@@ -97,7 +92,7 @@ export default function PresetEditScreen() {
         Alert.alert('エラー', '保存に失敗しました');
       }
     }
-  }, [name, bpm, backRatio, forwardRatio, soundType, isFavorite, isEditing, id, createPresetMutation, updatePresetMutation]);
+  }, [name, bpm, backRatio, forwardRatio, soundType, isEditing, id, createPresetMutation, updatePresetMutation]);
 
   const handleDelete = useCallback(() => {
     if (!id) return;
@@ -142,9 +137,7 @@ export default function PresetEditScreen() {
         <Text style={styles.headerTitle}>
           {isEditing ? 'プリセット編集' : 'プリセット作成'}
         </Text>
-        <Pressable onPress={handleSave} style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>保存</Text>
-        </Pressable>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -154,8 +147,8 @@ export default function PresetEditScreen() {
       >
         {/* プリセット名 */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>プリセット名</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitleInline}>プリセット名</Text>
             <Text style={styles.charCount}>{name.length}/{APP_CONFIG.MAX_PRESET_NAME_LENGTH}文字</Text>
           </View>
           <View style={styles.inputContainer}>
@@ -173,12 +166,7 @@ export default function PresetEditScreen() {
 
         {/* テンポ（BPM） */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>テンポ（BPM）</Text>
-            <View style={styles.accuracyBadge}>
-              <Text style={styles.accuracyBadgeText}>精度優先</Text>
-            </View>
-          </View>
+          <Text style={styles.sectionTitle}>テンポ（BPM）</Text>
           <View style={styles.bpmCard}>
             <View style={styles.bpmDisplay}>
               <Text style={styles.bpmValue}>{bpm}</Text>
@@ -280,25 +268,11 @@ export default function PresetEditScreen() {
               </View>
             )}
           </View>
-        </View>
-
-        {/* お気に入り */}
-        <View style={styles.favoriteCard}>
-          <View style={styles.favoriteInfo}>
-            <View style={styles.favoriteIcon}>
-              <Ionicons name="star" size={20} color="#F59E0B" />
-            </View>
-            <View>
-              <Text style={styles.favoriteTitle}>⭐ お気に入りに追加</Text>
-              <Text style={styles.favoriteDescription}>ホーム画面から素早くアクセス</Text>
-            </View>
-          </View>
-          <Switch
-            value={isFavorite}
-            onValueChange={setIsFavorite}
-            trackColor={{ false: '#374151', true: '#2a73ea' }}
-            thumbColor="#ffffff"
-          />
+          {/* プレビュー再生ボタン */}
+          <Pressable style={styles.soundPreviewButton} onPress={handlePreview}>
+            <Ionicons name="play-circle" size={20} color="#2a73ea" />
+            <Text style={styles.soundPreviewText}>プレビュー再生</Text>
+          </Pressable>
         </View>
 
         {/* 削除ボタン（編集時のみ） */}
@@ -312,14 +286,11 @@ export default function PresetEditScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* フッター - プレビュー */}
+      {/* フッター - 保存ボタン */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <View style={styles.footerContent}>
-          <View style={styles.miniPendulum}>
-            <View style={styles.miniPendulumIndicator} />
-          </View>
-          <Pressable style={styles.previewButton} onPress={handlePreview}>
-            <Text style={styles.previewButtonText}>🎵 プレビュー再生</Text>
+          <Pressable style={styles.saveButtonLarge} onPress={handleSave}>
+            <Text style={styles.saveButtonLargeText}>保存</Text>
           </Pressable>
         </View>
       </View>
@@ -352,16 +323,8 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     letterSpacing: -0.5,
   },
-  saveButton: {
-    backgroundColor: '#2a73ea',
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  saveButtonText: {
-    fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
-    color: '#ffffff',
+  headerSpacer: {
+    width: 40,
   },
   scrollView: {
     flex: 1,
@@ -374,13 +337,21 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
-  sectionHeader: {
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: 'Manrope_700Bold',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+  sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     marginBottom: 12,
   },
-  sectionTitle: {
+  sectionTitleInline: {
     fontSize: 12,
     fontFamily: 'Manrope_700Bold',
     color: '#9ca3af',
@@ -412,21 +383,6 @@ const styles = StyleSheet.create({
     right: 16,
     top: '50%',
     marginTop: -10,
-  },
-  accuracyBadge: {
-    backgroundColor: 'rgba(42, 115, 234, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(42, 115, 234, 0.2)',
-  },
-  accuracyBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
-    color: '#2a73ea',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   bpmCard: {
     backgroundColor: '#161616',
@@ -594,41 +550,22 @@ const styles = StyleSheet.create({
     color: '#2a73ea',
     fontFamily: 'Manrope_700Bold',
   },
-  favoriteCard: {
+  soundPreviewButton: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#161616',
-    borderWidth: 1,
-    borderColor: '#374151',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 32,
-  },
-  favoriteInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  favoriteIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(42, 115, 234, 0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(42, 115, 234, 0.2)',
   },
-  favoriteTitle: {
+  soundPreviewText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
-    color: '#ffffff',
-  },
-  favoriteDescription: {
-    fontSize: 10,
-    fontFamily: 'Manrope_400Regular',
-    color: '#6b7280',
-    marginTop: 2,
+    fontFamily: 'Manrope_600SemiBold',
+    color: '#2a73ea',
   },
   deleteButton: {
     flexDirection: 'row',
@@ -658,38 +595,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     alignItems: 'center',
-    gap: 16,
   },
-  miniPendulum: {
-    width: 192,
-    height: 4,
-    backgroundColor: '#374151',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  miniPendulumIndicator: {
-    position: 'absolute',
-    left: '50%',
-    marginLeft: -8,
-    width: 16,
-    height: 4,
-    backgroundColor: '#2a73ea',
-    borderRadius: 2,
-  },
-  previewButton: {
+  saveButtonLarge: {
     width: '100%',
     height: 56,
     borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#2a73ea',
-    backgroundColor: 'rgba(42, 115, 234, 0.05)',
+    backgroundColor: '#2a73ea',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#2a73ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  previewButtonText: {
+  saveButtonLargeText: {
     fontSize: 18,
     fontFamily: 'Manrope_700Bold',
-    color: '#2a73ea',
+    color: '#ffffff',
     letterSpacing: 1,
   },
 });
