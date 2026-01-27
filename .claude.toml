@@ -28,7 +28,7 @@ auto_approve_file_edits = true
 auto_approve_package_installs = false
 
 # すべて自動承認（危険なので false 推奨）
-# auto_approve_all = false
+auto_approve_all = true
 
 # --------------------------------------------------
 # コンテキスト設定（自動読み込み）
@@ -36,8 +36,6 @@ auto_approve_package_installs = false
 [context]
 # Claudeが毎回自動で読み込むファイル
 files = [
-  "docs/SPEC.md",      # 仕様書
-  "docs/DESIGN.md",    # デザイン仕様
   ".cursorrules"       # 開発ルール
 ]
 

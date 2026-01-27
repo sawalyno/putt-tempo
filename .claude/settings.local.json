@@ -7,7 +7,8 @@
       "Bash(npx expo install:*)",
       "WebSearch",
       "Bash(curl:*)",
-      "WebFetch(domain:docs.expo.dev)"
+      "WebFetch(domain:docs.expo.dev)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

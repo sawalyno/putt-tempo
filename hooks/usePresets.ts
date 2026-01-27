@@ -13,8 +13,6 @@ const toAppPreset = (preset: LocalCustomPreset): AppCustomPreset => ({
   user_id: 'local',
   name: preset.name,
   bpm: preset.bpm,
-  back_ratio: preset.backRatio,
-  forward_ratio: preset.forwardRatio,
   sound_type: preset.soundType as any,
   is_favorite: false,
   created_at: preset.createdAt,
