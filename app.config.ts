@@ -18,7 +18,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: true,
     bundleIdentifier: 'com.yourname.putt-tempo', // TODO: バンドルIDを変更
     config: {
-      googleMobileAdsAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
+      googleMobileAdsAppId: 'ca-app-pub-3940256099942544~1458002511', // テスト用 App ID（本番は AdMob で取得したIDに変更）
     },
     infoPlist: {
       UIBackgroundModes: ['audio'], // バックグラウンドオーディオ
@@ -32,7 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.yourname.putt_tempo', // TODO: パッケージ名を変更
     versionCode: 1,
     config: {
-      googleMobileAdsAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
+      googleMobileAdsAppId: 'ca-app-pub-3940256099942544~3347511713', // テスト用 App ID（本番は AdMob で取得したIDに変更）
     },
   },
   web: {
@@ -45,15 +45,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'react-native-google-mobile-ads',
       {
-        androidAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
-        iosAppId: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX', // TODO: AdMob App ID
+        androidAppId: 'ca-app-pub-3940256099942544~3347511713', // テスト用（本番は AdMob で取得したIDに変更）
+        iosAppId: 'ca-app-pub-3940256099942544~1458002511', // テスト用（本番は AdMob で取得したIDに変更）
       },
     ],
+    './plugins/withAdMobManifestMerge.js', // DELAY_APP_MEASUREMENT_INIT マージ衝突解消
   ],
   experiments: {
     typedRoutes: true,
   },
   extra: {
+    eas: {
+      projectId: '497fed1d-37c0-4392-a54f-e94506d4d564',
+    },
     // RevenueCat API Keys
     revenueCatIosKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
     revenueCatAndroidKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY,
