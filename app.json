@@ -39,13 +39,13 @@
       "typedRoutes": true
     },
     "extra": {
-      "admobBannerIdIos": "ca-app-pub-3940256099942544/2934735716",
-      "admobBannerIdAndroid": "ca-app-pub-3940256099942544/6300978111",
+      "admobBannerIdIos": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX",
+      "admobBannerIdAndroid": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX",
       "admobRewardIdIos": "ca-app-pub-3940256099942544/1712485313",
       "admobRewardIdAndroid": "ca-app-pub-3940256099942544/5224354917",
       "router": {},
       "eas": {
-        "projectId": "97ee9998-95e5-42a0-95f0-02ab6513558f"
+        "projectId": "497fed1d-37c0-4392-a54f-e94506d4d564"
       }
     }
   }
